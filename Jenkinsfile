@@ -25,18 +25,6 @@
 //     }
 // }
 
-
-pipeline {
-    agent 
-    stages {
-        stage('Tests unitaires') {
-            steps {
-                sh 'mvn test'
-            }
-        }
-    }
-}
-
 pipeline {
     agent any
 
@@ -46,6 +34,8 @@ pipeline {
                 sh 'mvn test'
             }
         }
+
+        
     }
 }
 
