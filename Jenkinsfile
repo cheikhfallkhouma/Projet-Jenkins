@@ -32,11 +32,11 @@ pipeline {
             image 'maven:3.9.6-eclipse-temurin-17'
         }
     }
-
+    
     stages {
-        stage('Test Maven') {
+        stage('Run Tests') {
             steps {
-                sh 'mvn --version'
+                sh 'mvn test'
             }
         }
     }
