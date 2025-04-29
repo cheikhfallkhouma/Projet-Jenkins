@@ -30,11 +30,11 @@ pipeline {
     agent {
         docker {
             image 'maven:3.9.6-eclipse-temurin-17'
+            label 'docker'
         }
     }
-    
     stages {
-        stage('Run Tests') {
+        stage('Tests unitaires') {
             steps {
                 sh 'mvn test'
             }
