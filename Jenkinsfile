@@ -1,14 +1,26 @@
 pipeline {
-    agent none  // On déclare "none" ici car chaque stage utilise son propre agent
+    agent none
 
     stages {
         stage('Tests Unitaires') {
-            agent { docker { image 'maven:3.9.6-eclipse-temurin-17'
-                                args '-v /var/run/docker.sock:/var/run/docker.sock, -v /root/.m2:/root/.m2' } }
-                                
-             } }
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-17'
+                    args '-v $HOME/.m2:/root/.m2'  // Pour cacher localement le repo maven
+                }
+            }
             steps {
-                sh 'mvn test'
+                sh 'mvn clean test'
             }
         }
-    
+    }
+
+    post {
+        success {
+            echo '✅ Tests unitaires réussis.'
+        }
+        failure {
+            echo '❌ Les tests unitaires ont échoué.'
+        }
+    }
+}
