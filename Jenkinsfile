@@ -11,7 +11,10 @@ pipeline {
             }
             steps {
                 // Exécution de Maven pour nettoyer et installer les dépendances
-                sh 'mvn clean install'
+                steps {
+                        // Nettoyer le cache Maven et exécuter Maven clean install
+                        sh 'rm -rf $HOME/.m2/repository/* && mvn clean install'
+                }
             }
         }
     }
