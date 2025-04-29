@@ -26,17 +26,17 @@
 // }
 
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'maven:3.8.8-openjdk-17'
+        }
+    }
 
     stages {
-        stage('Tests Unitaires') {
+        stage('Build and Test') {
             steps {
-                sh 'mvn test'
+                sh 'mvn clean install'
             }
         }
-
-        
     }
 }
-
-
