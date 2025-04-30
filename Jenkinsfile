@@ -13,8 +13,8 @@ pipeline {
                 timeout(time: 10, unit: 'MINUTES') {
                     echo "🕐 Début de la compilation : ${new Date()}"
                     sh '''
-                        echo "🚀 Lancement de mvn clean install..."
-                        mvn clean install -B -V
+                        echo "🚀 Lancement de mvn clean test..."
+                        mvn clean test -B -V
                     '''
                     echo "✅ Fin de la compilation : ${new Date()}"
                 }
@@ -31,3 +31,4 @@ pipeline {
         }
     }
 }
+
