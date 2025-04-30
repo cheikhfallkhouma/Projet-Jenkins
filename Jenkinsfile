@@ -10,7 +10,14 @@ pipeline {
                 }
             }
             steps {
-                sh 'rm -rf $HOME/.m2/repository/* && mvn clean install'
+                timeout(time: 10, unit: 'MINUTES') {
+                    echo "🕐 Début de la compilation : ${new Date()}"
+                    sh '''
+                        echo "🚀 Lancement de mvn clean install..."
+                        mvn clean install -B -V
+                    '''
+                    echo "✅ Fin de la compilation : ${new Date()}"
+                }
             }
         }
     }
