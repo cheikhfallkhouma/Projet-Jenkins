@@ -24,19 +24,8 @@ pipeline {
                 }
             }
         }
-    }
 
-    post {
-        success {
-            echo '✅ Tests unitaires réussis.'
-        }
-        failure {
-            echo '❌ Les tests unitaires ont échoué.'
-        }
-    }
-
-    
-stage('Analyse SonarCloud') {
+        stage('Analyse SonarCloud') {
             agent {
                 docker {
                     image 'maven:3.9.6-eclipse-temurin-17'
@@ -61,3 +50,4 @@ stage('Analyse SonarCloud') {
             echo '❌ Échec de la pipeline.'
         }
     }
+}
