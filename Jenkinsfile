@@ -33,17 +33,20 @@ pipeline {
                 }
             }
             steps {
-                echo '📊 Lancement de l’analyse SonarCloud...'
-                sh """
-                    mvn verify sonar:sonar \
-                        -Dsonar.login=${SONAR_TOKEN} \
-                        -Dsonar.host.url=https://sonarcloud.io \
-                        -Dsonar.organization=cheikhfallkhouma \
-                        -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
-                """
+                    withSonarQubeEnv('SonarCloud') {
+                    echo '📊 Lancement de l’analyse SonarCloud...'
+                    sh """
+                        mvn verify sonar:sonar \
+                            -Dsonar.login=${SONAR_TOKEN} \
+                            -Dsonar.host.url=https://sonarcloud.io \
+                            -Dsonar.organization=cheikhfallkhouma \
+                            -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
+                    """
+                }   
             }
         }
     }
+    
 
     post {
         success {
