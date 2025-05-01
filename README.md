@@ -55,3 +55,5 @@ NB: A la fin de la pipeline une notification via slack portant sur le statu de l
 - [Formation Jenkins ](https://eazytraining.fr/cours/jenkins-ci-cd-pour-devops/)
 - [Documentation Jenkins](https://www.jenkins.io/doc/)
 - [Meilleures pratiques CI/CD avec Jenkins](https://www.jenkins.io/doc/book/pipeline/#best-practices)
+
+![alt text](<CICD Jenkins.png>)

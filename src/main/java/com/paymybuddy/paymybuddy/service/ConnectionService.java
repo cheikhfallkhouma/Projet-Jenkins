@@ -168,14 +168,20 @@ public class ConnectionService {
 	 * @param id connection to find
 	 * @return Optional connection
 	 */
-	public Optional<ConnectionViewModel> getConnectionById(Integer id) {
-		if (connectionRepository.findById(id).isPresent()) {
-			return Optional.of(connectionToViewModel(connectionRepository.findById(id).get()));
-		} else {
-			return Optional.empty();
-		}
-	}
+	// public Optional<ConnectionViewModel> getConnectionById(Integer id) {
+	// 	if (connectionRepository.findById(id).isPresent()) {
+	// 		return Optional.of(connectionToViewModel(connectionRepository.findById(id).get()));
+	// 	} else {
+	// 		return Optional.empty();
+	// 	}
+	// }
 
+	public Optional<ConnectionViewModel> getConnectionById(Integer id) {
+		return connectionRepository.findById(id)
+				.map(ConnectionService::connectionToViewModel);
+	}
+	
+	
 	public static ConnectionViewModel connectionToViewModel(Connection connection) {
 		return new ConnectionViewModel(connection.getId(), UserService.userToViewModel(connection.getInitializer()),
 				UserService.userToViewModel(connection.getReceiver()),
