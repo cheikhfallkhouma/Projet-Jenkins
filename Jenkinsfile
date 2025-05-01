@@ -35,14 +35,11 @@ pipeline {
             steps {
                 echo '📊 Lancement de l’analyse SonarCloud...'
                 sh """
-                    
-                        mvn verify sonar:sonar \
+                    mvn verify sonar:sonar \
                         -Dsonar.login=${SONAR_TOKEN} \
                         -Dsonar.host.url=https://sonarcloud.io \
                         -Dsonar.organization=cheikhfallkhouma \
-                        -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
-
-                        }
+                         -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
                 """
             }
         }
@@ -56,4 +53,4 @@ pipeline {
             echo '❌ Échec de la pipeline.'
         }
     }
-
+}
