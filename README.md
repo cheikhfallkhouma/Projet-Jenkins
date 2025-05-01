@@ -3,7 +3,7 @@
 # Projet : Création d'une Pipeline CI/CD avec Jenkins
 
 ## Objectif
-L'objectif de ce projet est de concevoir une pipeline d'intégration continue (CI) et de déploiement continu (CD) pour le déploiement d'une application [spring boot](https://github.com/eazytraining/PayMyBuddy) sur un serveur accessible via SSH. L'apprenant devra mettre en œuvre les étapes nécessaires pour assurer la qualité et la sécurité du code tout en automatisant le processus de déploiement.
+L'objectif de ce projet est de concevoir une pipeline d'intégration continue (CI) et de déploiement continu (CD) pour le déploiement d'une application [spring boot](https://github.com/cheikhfallkhouma/Projet-Jenkins) sur un serveur accessible via SSH. L'apprenant devra mettre en œuvre les étapes nécessaires pour assurer la qualité et la sécurité du code tout en automatisant le processus de déploiement.
 
 ## Étapes de la Pipeline CI/CD
 

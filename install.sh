@@ -6,7 +6,7 @@ sh install-docker.sh --dry-run
 sudo sh install-docker.sh
 sudo usermod -aG docker $(whoami)
 newgrp docker
-sudo apt  install docker-compose
+sudo apt  install docker-compose -y
 
 
 # Docker-compose file for Jenkins
@@ -21,7 +21,7 @@ services:
   jenkins:
     privileged: true
     user: root
-    container_name: jenkins-launch
+    container_name: jenkins-server
     image: jenkins/jenkins:2.490-jdk17
     restart: always
     ports:

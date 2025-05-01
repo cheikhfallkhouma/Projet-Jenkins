@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/transfer")
@@ -96,10 +97,25 @@ public class TransferController {
                         throw new BuddyNotFoundException(
                                 "Buddy with email (" + transferForm.getPayeeEmail() + ") does not exist.");
                     }
-                    transactionService.createTransaction(userService.getAuthenticatedUser(),
-                                                         userService.getUserByEmail(transferForm.getPayeeEmail()).get(),
-                                                         transferForm.getDescription(),
-                                                         transferForm.getAmount());
+
+                    Optional<User> optionalPayee = userService.getUserByEmail(transferForm.getPayeeEmail());
+
+                    if (optionalPayee.isEmpty()) {
+                        throw new BuddyNotFoundException("Buddy with email (" + transferForm.getPayeeEmail() + ") does not exist.");
+                    }
+
+                    transactionService.createTransaction(
+                        userService.getAuthenticatedUser(),
+                        optionalPayee.get(),
+                        transferForm.getDescription(),
+                        transferForm.getAmount()
+                    );
+
+
+                    // transactionService.createTransaction(userService.getAuthenticatedUser(),
+                    //                                      userService.getUserByEmail(transferForm.getPayeeEmail()).get(),
+                    //                                      transferForm.getDescription(),
+                    //                                      transferForm.getAmount());
                     redirAttrs.addFlashAttribute("success",
                                                  "You successfully transferred " + transferForm.getAmount() + "€ to " + transferForm.getPayeeEmail());
                 }
