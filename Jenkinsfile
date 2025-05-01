@@ -39,7 +39,7 @@ pipeline {
                         mvn verify sonar:sonar \
                             -Dsonar.login=${SONAR_TOKEN} \
                             -Dsonar.host.url=https://sonarcloud.io \
-                            -Dsonar.organization=cheikhfallkhouma \
+                            -Dsonar.organization=cheikhfallkhouma-1\
                             -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
                     """
                 }   
