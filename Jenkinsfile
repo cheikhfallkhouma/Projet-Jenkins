@@ -35,8 +35,7 @@ pipeline {
         }
     }
 
-
-
+    
 stage('Analyse SonarCloud') {
             agent {
                 docker {
