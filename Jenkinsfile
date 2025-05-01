@@ -39,7 +39,7 @@ pipeline {
                         -Dsonar.login=${SONAR_TOKEN} \
                         -Dsonar.host.url=https://sonarcloud.io \
                         -Dsonar.organization=cheikhfallkhouma \
-                         -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
+                        -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
                 """
             }
         }
