@@ -1,8 +1,17 @@
 pipeline {
-    agent none
+    
+    agent {
+        docker {
+            image 'maven:3.8.6-openjdk-17'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
         SONAR_TOKEN = credentials('SONAR_TOKEN')
+        PORT_EXPOSED = "80"
+        IMAGE_NAME = 'paymybuddy'
+        IMAGE_TAG = 'lastest'
     }
 
     stages {
@@ -74,6 +83,28 @@ pipeline {
             }
         }
 
+        stage('Package') {
+            steps {
+                sh 'mvn package -DskipTests'
+            }
+    }
+
+        stage('Build Image and push image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'DOCKERHUB_AUTH',
+                    usernameVariable: 'DOCKERHUB_AUTH',
+                    passwordVariable: 'DOCKERHUB_AUTH_PSW'
+                )]) {
+                    sh '''
+                        echo "${DOCKERHUB_AUTH_PSW}" | docker login -u "${DOCKERHUB_AUTH}" --password-stdin
+                        docker build -t ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG} .
+                        docker push ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}            
+                    '''
+                }
+            }
+        }
+
     }
     
     post {
@@ -84,4 +115,7 @@ pipeline {
             echo '❌ Échec de la pipeline.'
         }
     }
+
+
+    
 }
