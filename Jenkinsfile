@@ -25,6 +25,26 @@ pipeline {
             }
         }
 
+        stage('Tests d’Intégration') {
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-17'
+                    args '-v $HOME/.m2:/root/.m2'
+                }
+            }
+            steps {
+                timeout(time: 15, unit: 'MINUTES') {
+                    echo "🧪 Début des tests d'intégration : ${new Date()}"
+                    sh '''
+                        echo "🚀 Lancement des tests d’intégration..."
+                        mvn verify -Pintegration-tests
+                    '''
+                    echo "✅ Fin des tests d'intégration : ${new Date()}"
+                }
+            }
+        }
+
+
         stage('Analyse SonarCloud') {
             agent {
                 docker {
