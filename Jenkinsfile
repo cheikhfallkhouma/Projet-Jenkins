@@ -69,7 +69,7 @@ pipeline {
                 stage('Vérification Quality Gate') {
                     steps {
                         timeout(time: 1, unit: 'MINUTES') {
-                            waitForQualityGate abortPipeline: flase
+                            waitForQualityGate abortPipeline: false
                 }
             }
         }
