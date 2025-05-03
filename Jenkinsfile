@@ -113,39 +113,43 @@ pipeline {
                             credentialsId: 'DOCKERHUB_AUTH',
                             usernameVariable: 'DOCKERHUB_AUTH',
                             passwordVariable: 'DOCKERHUB_AUTH_PSW'
-                        )
+                        ),
+                        string(credentialsId: 'db_user', variable: 'DB_USER'),
+                        string(credentialsId: 'db_password', variable: 'DB_PASSWORD'),
+                        string(credentialsId: 'db_root_password', variable: 'DB_ROOT_PASSWORD')
                     ]) {
                         sh '''
-                            [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
-                            ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
+                        [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
+                        ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
 
-                            # Copier docker-compose.yml sur le serveur
-                            scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
+                        # Générer docker-compose.yml avec les valeurs sensibles
+                        cp docker-compose.template.yml docker-compose.yml
+                        sed -i "s|__DB_USER__|${DB_USER}|g" docker-compose.yml
+                        sed -i "s|__DB_PASSWORD__|${DB_PASSWORD}|g" docker-compose.yml
+                        sed -i "s|__DB_ROOT_PASSWORD__|${DB_ROOT_PASSWORD}|g" docker-compose.yml
+                        sed -i "s|__DOCKER_IMAGE__|${DOCKERHUB_AUTH}/paymybuddy:latest|g" docker-compose.yml
 
-                            # Connexion et déploiement
-                            ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
-                                if ! command -v docker &> /dev/null; then
-                                    curl -fsSL https://get.docker.com | sh
-                                fi
-                                sudo systemctl start docker || true
-                                sudo usermod -aG docker ubuntu
+                        # Copier le fichier sur le serveur
+                        scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
 
-                                echo \\"Login DockerHub et mise à jour de l'image\\"
-                                echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
-                                
-                                # Remplacer les variables dans docker-compose.yml
-                                sed -i 's/DB_USER_PLACEHOLDER/${DB_USER}/' docker-compose.yml
-                                sed -i 's/DB_PASSWORD_PLACEHOLDER/${DB_PASSWORD}/' docker-compose.yml
-                                sed -i 's/DB_ROOT_PASSWORD_PLACEHOLDER/${DB_ROOT_PASSWORD}/' docker-compose.yml
+                        # Déploiement distant
+                        ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                            if ! command -v docker &> /dev/null; then
+                                curl -fsSL https://get.docker.com | sh
+                            fi
+                            sudo systemctl start docker || true
+                            sudo usermod -aG docker ubuntu
 
+                            echo 'Connexion DockerHub'
+                            echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
 
-                                cd /home/ubuntu
-                                sudo apt  install docker-compose -y
-                                docker-compose pull
-                                docker-compose down
-                                docker-compose up -d
+                            cd /home/ubuntu
+                            sudo apt install docker-compose -y
+                            docker-compose pull
+                            docker-compose down
+                            docker-compose up -d
 
-                                docker ps
+                            docker ps
                             "
                         '''
                     }
