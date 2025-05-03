@@ -65,8 +65,8 @@ pipeline {
                         mvn verify sonar:sonar \
                             -Dsonar.login=${SONAR_TOKEN} \
                             -Dsonar.host.url=https://sonarcloud.io \
-                            -Dsonar.organization=cheikhfallkhouma-1 \
-                            -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
+                            -Dsonar.organization=xxxx-1 \
+                            -Dsonar.projectKey=xxxxxx-Jenkins
                     """
                 }   
             }
@@ -119,26 +119,37 @@ pipeline {
                             [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
                             ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
 
-                            # Copier docker-compose.yml sur le serveur
-                            scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
-
-                            # Connexion et déploiement
+                            # Installer docker-compose si non installé
                             ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
-                                if ! command -v docker &> /dev/null; then
-                                    curl -fsSL https://get.docker.com | sh
+                                if ! command -v docker-compose &> /dev/null; then
+                                    sudo curl -L 'https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)' -o /usr/local/bin/docker-compose;
+                                    sudo chmod +x /usr/local/bin/docker-compose;
                                 fi
-                                sudo systemctl start docker || true
+
+                                # Ajouter l'utilisateur ubuntu au groupe docker pour éviter sudo
                                 sudo usermod -aG docker ubuntu
 
-                                echo \\"Login DockerHub et mise à jour de l'image\\"
-                                echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
+                                # Copier docker-compose.yml sur le serveur
+                                scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
 
-                                cd /home/ubuntu
-                                docker-compose pull
-                                docker-compose down
-                                docker-compose up -d
+                                # Connexion et déploiement
+                                ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                                    if ! command -v docker &> /dev/null; then
+                                        curl -fsSL https://get.docker.com | sh
+                                    fi
+                                    sudo systemctl start docker || true
+                                    sudo usermod -aG docker ubuntu
 
-                                docker ps
+                                    echo 'Login DockerHub et mise à jour de l\'image'
+                                    echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
+
+                                    cd /home/ubuntu
+                                    docker-compose pull
+                                    docker-compose down
+                                    docker-compose up -d
+
+                                    docker ps
+                                "
                             "
                         '''
                     }
