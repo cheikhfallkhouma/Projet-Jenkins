@@ -134,6 +134,7 @@ pipeline {
                                 echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
 
                                 cd /home/ubuntu
+                                sudo apt  install docker-compose -y
                                 docker-compose pull
                                 docker-compose down
                                 docker-compose up -d
