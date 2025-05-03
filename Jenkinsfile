@@ -9,7 +9,7 @@ pipeline {
 
     environment {
         SONAR_TOKEN = credentials('SONAR_TOKEN')
-        PORT_EXPOSED = "80"
+        PORT_EXPOSED = "8080"
         IMAGE_NAME = 'paymybuddy'
         IMAGE_TAG = 'lastest'
     }
@@ -111,12 +111,34 @@ pipeline {
             }
             steps {
                 sshagent(credentials: ['SSH_AUTH_SERVER']) {
-                    withCredentials([usernamePassword(
+                    withCredentials([
+                        string(credentialsId: 'DB_USER', variable: 'DB_USER'),
+                        string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
+                        string(credentialsId: 'DB_ROOT_PASSWORD', variable: 'DB_ROOT_PASSWORD'),
+                        usernamePassword(
                         credentialsId: 'DOCKERHUB_AUTH',
                         usernameVariable: 'DOCKERHUB_AUTH',
                         passwordVariable: 'DOCKERHUB_AUTH_PSW'
                     )]) {
                         sh '''
+
+
+                            mkdir -p secrets
+                            echo "$DB_USER" > secrets/db_user.txt
+                            echo "$DB_PASSWORD" > secrets/db_password.txt
+                            echo "$DB_ROOT_PASSWORD" > secrets/db_root_password.txt
+
+                            scp -r secrets docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:~/deploy/
+
+                            ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                                cd ~/deploy &&
+                                docker-compose down || true &&
+                                docker-compose up -d
+                            "
+
+                            rm -rf secrets
+
+
                             # S'assurer que le dossier .ssh existe
                             [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
                             ssh-keyscan -t rsa,dsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
@@ -145,11 +167,11 @@ pipeline {
                             ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
                                 docker login -u '${DOCKERHUB_AUTH}' -p '${DOCKERHUB_AUTH_PSW}' &&
                                 docker pull '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}' &&
-                                docker rm -f paymaybuddyweapp || echo 'app does not exist' &&
-                                docker run -d -p 80:5000 -e PORT=5000 --name paymaybuddyweapp '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}'
+                                docker rm -f paymaybuddywebapp || echo 'app does not exist' &&
+                                docker run -d -p 80:5000 -e PORT=5000 --name paymaybuddywebapp '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}'
                                 sleep 3 &&
-                                docker ps -a --filter name=paymaybuddyweapp &&
-                                docker logs paymaybuddyweapp
+                                docker ps -a --filter name=paymaybuddywebapp &&
+                                docker logs paymaybuddywebapp
                             "
                         '''
                     }
