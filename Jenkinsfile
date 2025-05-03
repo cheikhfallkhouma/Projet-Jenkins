@@ -114,9 +114,9 @@ pipeline {
                             usernameVariable: 'DOCKERHUB_AUTH',
                             passwordVariable: 'DOCKERHUB_AUTH_PSW'
                         ),
-                        string(credentialsId: 'db_user', variable: 'DB_USER'),
-                        string(credentialsId: 'db_password', variable: 'DB_PASSWORD'),
-                        string(credentialsId: 'db_root_password', variable: 'DB_ROOT_PASSWORD')
+                        string(credentialsId: 'DB_USER', variable: 'DB_USER'),
+                        string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
+                        string(credentialsId: 'DB_ROOT_PASSWORD', variable: 'DB_ROOT_PASSWORD')
                     ]) {
                         sh '''
                         [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
