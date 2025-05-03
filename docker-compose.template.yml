@@ -5,17 +5,17 @@ services:
     image: mysql:8
     container_name: paymybuddy_db
     environment:
-      MYSQL_ROOT_PASSWORD: "__DB_ROOT_PASSWORD__"
+      MYSQL_ROOT_PASSWORD: "rootpassword"
       MYSQL_DATABASE: "paymybuddy"
-      MYSQL_USER: "__DB_USER__"
-      MYSQL_PASSWORD: "__DB_PASSWORD__"
+      MYSQL_USER: "paymybuddy"
+      MYSQL_PASSWORD: "secretpassword"
     ports:
       - "3306:3306"
     volumes:
       - ./init_data-base/create.sql:/docker-entrypoint-initdb.d/create.sql
 
   app:
-    image: __DOCKER_IMAGE__
+    image: rootcfk/paymybuddy:latest
     container_name: paymybuddy_app
     depends_on:
       - db
@@ -23,7 +23,7 @@ services:
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: paymybuddy
-      DB_USER: "__DB_USER__"
-      DB_PASSWORD: "__DB_PASSWORD__"
+      DB_USER: "paymybuddy"
+      DB_PASSWORD: "secretpassword"
     ports:
       - "80:5000"
