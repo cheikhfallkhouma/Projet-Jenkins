@@ -351,6 +351,7 @@
 
 
 pipeline {
+    agent none  // 🔧 Agent global obligatoire même si chaque stage utilise son propre agent
 
     environment {
         SONAR_TOKEN = credentials('SONAR_TOKEN')
@@ -432,7 +433,8 @@ pipeline {
         stage('Package') {
             agent {
                 docker {
-                    image 'maven:3.9.6-eclipse-temurin-17'
+                    image 'maven:3.9.3-eclipse-temurin-17'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
             steps {
@@ -440,7 +442,7 @@ pipeline {
             }
         }
 
-        stage('Build Image and push image') {
+        stage('Build Image and Push') {
             agent {
                 docker {
                     image 'maven:3.9.3-eclipse-temurin-17'
@@ -463,7 +465,7 @@ pipeline {
         }
 
         stage('Deploy in staging') {
-            agent any  // ✅ Ce stage est exécuté sur l'agent Jenkins (pas dans Docker)
+            agent any  // 💡 Important : on ne tourne pas dans un container ici (besoin de ssh-agent)
             environment {
                 HOSTNAME_DEPLOY_STAGING = "23.22.211.169"
             }
@@ -485,15 +487,11 @@ pipeline {
 
                             ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
                                 if ! command -v docker &> /dev/null; then
-                                    echo 'Docker non installé, installation via script officiel...'
+                                    echo 'Docker non installé, installation...'
                                     curl -fsSL https://get.docker.com | sh
                                 fi
 
-                                if ! pgrep dockerd > /dev/null; then
-                                    echo 'Démarrage du daemon Docker...'
-                                    sudo systemctl start docker
-                                fi
-
+                                sudo systemctl start docker || echo 'Docker déjà démarré'
                                 sudo usermod -aG docker ubuntu
                             "
 
@@ -504,13 +502,11 @@ pipeline {
                                 docker compose -f docker-compose.yml up -d
                             "
 
-                            echo "Image to pull: ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
                             ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
                                 docker login -u '${DOCKERHUB_AUTH}' -p '${DOCKERHUB_AUTH_PSW}' &&
                                 docker pull '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}' &&
                                 docker rm -f paymaybuddywebapp || echo 'app does not exist' &&
-                                docker run -d -p 80:5000 -e PORT=5000 --name paymaybuddywebapp '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}'
+                                docker run -d -p 80:5000 -e PORT=5000 --name paymaybuddywebapp '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}' &&
                                 sleep 3 &&
                                 docker ps -a --filter name=paymaybuddywebapp &&
                                 docker logs paymaybuddywebapp
