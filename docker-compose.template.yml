@@ -11,6 +11,8 @@ services:
       MYSQL_PASSWORD: "__DB_PASSWORD__"
     ports:
       - "3306:3306"
+    volumes:
+      - ./init_data-base/create.sql:/docker-entrypoint-initdb.d/create.sql
 
   app:
     image: __DOCKER_IMAGE__
