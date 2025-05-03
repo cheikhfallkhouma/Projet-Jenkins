@@ -132,6 +132,12 @@ pipeline {
 
                                 echo \\"Login DockerHub et mise à jour de l'image\\"
                                 echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
+                                
+                                # Remplacer les variables dans docker-compose.yml
+                                sed -i 's/DB_USER_PLACEHOLDER/${DB_USER}/' docker-compose.yml
+                                sed -i 's/DB_PASSWORD_PLACEHOLDER/${DB_PASSWORD}/' docker-compose.yml
+                                sed -i 's/DB_ROOT_PASSWORD_PLACEHOLDER/${DB_ROOT_PASSWORD}/' docker-compose.yml
+
 
                                 cd /home/ubuntu
                                 sudo apt  install docker-compose -y
