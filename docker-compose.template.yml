@@ -25,6 +25,3 @@ services:
       DB_PASSWORD: "__DB_PASSWORD__"
     ports:
       - "80:5000"
-    command: ["./wait-for-it.sh", "db:3306", "--", "java", "-jar", "your-application.jar"]
-
-    
