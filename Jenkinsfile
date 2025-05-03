@@ -105,62 +105,73 @@ pipeline {
             }
         }
 
-        stage('Deploy in staging') {
-            environment {
-                HOSTNAME_DEPLOY_STAGING = "3.84.110.84"
-            }
-            steps {
-                sshagent(credentials: ['SSH_AUTH_SERVER']) {
-                    withCredentials([
-                        string(credentialsId: 'DB_USER', variable: 'DB_USER'),
-                        string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
-                        string(credentialsId: 'DB_ROOT_PASSWORD', variable: 'DB_ROOT_PASSWORD'),
-                        usernamePassword(
-                        credentialsId: 'DOCKERHUB_AUTH',
-                        usernameVariable: 'DOCKERHUB_AUTH',
-                        passwordVariable: 'DOCKERHUB_AUTH_PSW'
-                    )]) {
-                        sh '''
-                        
-                            # S'assurer que le dossier .ssh existe
-                            [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
-                            ssh-keyscan -t rsa,dsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
+       
+       stage('Deploy in staging') {
+    environment {
+        HOSTNAME_DEPLOY_STAGING = "3.84.110.84"
+    }
+    steps {
+        sshagent(credentials: ['SSH_AUTH_SERVER']) {
+            withCredentials([
+                string(credentialsId: 'DB_USER', variable: 'DB_USER'),
+                string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
+                string(credentialsId: 'DB_ROOT_PASSWORD', variable: 'DB_ROOT_PASSWORD'),
+                usernamePassword(
+                    credentialsId: 'DOCKERHUB_AUTH',
+                    usernameVariable: 'DOCKERHUB_AUTH',
+                    passwordVariable: 'DOCKERHUB_AUTH_PSW'
+                )
+            ]) {
+                sh '''
+                    # S'assurer que le dossier .ssh existe
+                    [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
+                    ssh-keyscan -t rsa,dsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
 
-                            # Vérification si Docker est installé, si ce n'est pas le cas, installation
-                            ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
-                                if ! command -v docker &> /dev/null; then
-                                    echo 'Docker non installé, installation via script officiel...'
-                                    curl -fsSL https://get.docker.com | sh
-                                fi
+                    # Vérification si Docker est installé, si ce n'est pas le cas, installation
+                    ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                        if ! command -v docker &> /dev/null; then
+                            echo 'Docker non installé, installation via script officiel...'
+                            curl -fsSL https://get.docker.com | sh
+                        fi
 
-                                # Démarrer Docker si nécessaire
-                                if ! pgrep dockerd > /dev/null; then
-                                    echo 'Démarrage du daemon Docker...'
-                                    sudo systemctl start docker
-                                fi
+                        # Démarrer Docker si nécessaire
+                        if ! pgrep dockerd > /dev/null; then
+                            echo 'Démarrage du daemon Docker...'
+                            sudo systemctl start docker
+                        fi
 
-                                # Ajouter l'utilisateur ubuntu au groupe docker
-                                sudo usermod -aG docker ubuntu
-                            "
-                            
-                            # Affichage de l'image avant de la récupérer
-                            echo "Image to pull: ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}"
+                        # Ajouter l'utilisateur ubuntu au groupe docker
+                        sudo usermod -aG docker ubuntu
+                    "
 
-                            # Commandes Docker à exécuter à distance
-                            ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
-                                docker login -u '${DOCKERHUB_AUTH}' -p '${DOCKERHUB_AUTH_PSW}' &&
-                                docker pull '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}' &&
-                                docker rm -f paymaybuddywebapp || echo 'app does not exist' &&
-                                docker run -d -p 80:5000 -e PORT=5000 --name paymaybuddywebapp '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}'
-                                sleep 3 &&
-                                docker ps -a --filter name=paymaybuddywebapp &&
-                                docker logs paymaybuddywebapp
-                            "
-                        '''
-                    }
-                }
+                    # Copier le fichier docker-compose.yml dans le répertoire de staging
+                    scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
+
+                    # Lancer les services de base de données via docker-compose
+                    ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                        cd /home/ubuntu &&
+                        docker compose -f docker-compose.yml up -d
+                    "
+
+                    # Affichage de l'image avant de la récupérer
+                    echo "Image to pull: ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}"
+
+                    # Commandes Docker à exécuter à distance
+                    ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                        docker login -u '${DOCKERHUB_AUTH}' -p '${DOCKERHUB_AUTH_PSW}' &&
+                        docker pull '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}' &&
+                        docker rm -f paymaybuddywebapp || echo 'app does not exist' &&
+                        docker run -d -p 80:5000 -e PORT=5000 --name paymaybuddywebapp '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}'
+                        sleep 3 &&
+                        docker ps -a --filter name=paymaybuddywebapp &&
+                        docker logs paymaybuddywebapp
+                    "
+                '''
             }
         }
+    }
+}
+
     }
        
     post {
