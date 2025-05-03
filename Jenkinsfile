@@ -8,12 +8,11 @@ pipeline {
     }
 
     environment {
-    SONAR_TOKEN = credentials('SONAR_TOKEN')  // Ton token SonarQube
-    DOCKERHUB_AUTH = credentials('DOCKERHUB_AUTH')  // Identifiants DockerHub
-    DB_USER = credentials('db_user')  // Identifiants de la BDD
-    DB_PASSWORD = credentials('db_password')  // Mot de passe de la BDD
-    DB_ROOT_PASSWORD = credentials('db_root_password')  // Mot de passe root de la BDD
-}
+        SONAR_TOKEN = credentials('SONAR_TOKEN')
+        PORT_EXPOSED = "80"
+        IMAGE_NAME = 'paymybuddy'
+        IMAGE_TAG = 'latest'
+    }
 
     stages {
         stage('Tests Unitaires') {
@@ -128,22 +127,26 @@ pipeline {
 
                             # Connexion et déploiement
                             ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                                export DB_USER=${DB_USER}
+                                export DB_PASSWORD=${DB_PASSWORD}
+                                export DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+
                                 if ! command -v docker &> /dev/null; then
                                     curl -fsSL https://get.docker.com | sh
                                 fi
                                 sudo systemctl start docker || true
                                 sudo usermod -aG docker ubuntu
 
-                                echo 'Login DockerHub et mise à jour de l'image'
+                                echo \\"Login DockerHub et mise à jour de l'image\\"
                                 echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
 
                                 cd /home/ubuntu
-
+                                sudo apt install docker-compose -y
                                 # Remplacer les variables dans docker-compose.yml
                                 sed -i 's/DB_USER_PLACEHOLDER/${DB_USER}/' docker-compose.yml
                                 sed -i 's/DB_PASSWORD_PLACEHOLDER/${DB_PASSWORD}/' docker-compose.yml
                                 sed -i 's/DB_ROOT_PASSWORD_PLACEHOLDER/${DB_ROOT_PASSWORD}/' docker-compose.yml
-                                sudo apt install docker-compose -y
+
                                 docker-compose pull
                                 docker-compose down
                                 docker-compose up -d
@@ -166,10 +169,6 @@ pipeline {
         }
     }
 }
-
-
-
-
 
 
 // pipeline {
