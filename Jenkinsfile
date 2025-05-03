@@ -2,7 +2,7 @@ pipeline {
     
     agent {
         docker {
-            image 'maven:3.9.9-amazoncorretto-8-al2023'
+            image 'maven:3.9.3-eclipse-temurin-17'
             args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
