@@ -1,53 +1,47 @@
-version: '3.1'
+version: '3.8'
+
 services:
-  paymybuddy:
-    image: ${IMAGE_VERSION}
-    container_name: paymybuddy
+  paymybuddy-backend:
+    build: .
+    container_name: paymybuddy-backend
     restart: always
-    environment:
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: paymybuddydb
-      DB_PORT: 3306
-      DB_NAME: paymybuddy
     depends_on:
-      - paymybuddydb
+      paymybuddy-db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://paymybuddy-db:3306/paymybuddy
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
     ports:
       - "8080:8080"
     networks:
-      - paymybuddynetwork
+      - paymybuddy-network
 
-  paymybuddydb:
-    image: mysql:8
-    container_name: paymybuddydb
+  paymybuddy-db:
+    image: mysql:8.0
+    container_name: paymybuddy-db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: paymybuddy
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - db_paymybuddy:/var/lib/mysql
-      - ./initdb:/docker-entrypoint-initdb.d
     ports:
       - "3306:3306"
+    volumes:
+      - paymybuddy_mysql_data:/var/lib/mysql
     networks:
-      - paymybuddynetwork
+      - paymybuddy-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       retries: 5
       start_period: 10s
 
-secrets:
-  db_user:
-    external: true
-  db_password:
-    external: true
-
 volumes:
-  db_paymybuddy:
+  paymybuddy_mysql_data:
 
 networks:
-  paymybuddynetwork:
+  paymybuddy-network:
     driver: bridge
