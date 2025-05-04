@@ -124,10 +124,16 @@ pipeline {
 
                         # Générer docker-compose.yml avec les valeurs sensibles
                         cp docker-compose.template.yml docker-compose.yml
+                        // sed -i "s|__DB_USER__|${DB_USER}|g" docker-compose.yml
+                        // sed -i "s|__DB_PASSWORD__|${DB_PASSWORD}|g" docker-compose.yml
+                        // sed -i "s|__DB_ROOT_PASSWORD__|${DB_ROOT_PASSWORD}|g" docker-compose.yml
+                        // sed -i "s|__DOCKER_IMAGE__|${DOCKERHUB_AUTH}/paymybuddy:latest|g" docker-compose.yml
+                        
                         sed -i "s|__DB_USER__|${DB_USER}|g" docker-compose.yml
                         sed -i "s|__DB_PASSWORD__|${DB_PASSWORD}|g" docker-compose.yml
                         sed -i "s|__DB_ROOT_PASSWORD__|${DB_ROOT_PASSWORD}|g" docker-compose.yml
                         sed -i "s|__DOCKER_IMAGE__|${DOCKERHUB_AUTH}/paymybuddy:latest|g" docker-compose.yml
+
 
                         # Copier le fichier sur le serveur
                         scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml

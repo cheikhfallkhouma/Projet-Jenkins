@@ -1,47 +1,42 @@
-version: '3.8'
-
+version: '3.1'
 services:
-  paymybuddy-backend:
-    build: .
-    container_name: paymybuddy-backend
+  paymybuddy:
+    image: ${DOCKERHUB_AUTH}/paymybuddy:latest
+    container_name: paymybuddy
     restart: always
-    depends_on:
-      paymybuddy-db:
-        condition: service_healthy
+    env_file:
+      - env/paymybuddy.env
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://paymybuddy-db:3306/paymybuddy
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:mysql://paymybuddydb:3306/paymybuddy
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - paymybuddydb
     ports:
       - "8080:8080"
     networks:
-      - paymybuddy-network
+      - paymybuddynetwork
 
-  paymybuddy-db:
-    image: mysql:8.0
-    container_name: paymybuddy-db
+  paymybuddydb:
+    image: mysql:latest
+    container_name: paymybuddydb
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: paymybuddy
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_paymybuddy:/var/lib/mysql
     ports:
       - "3306:3306"
-    volumes:
-      - paymybuddy_mysql_data:/var/lib/mysql
     networks:
-      - paymybuddy-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      retries: 5
-      start_period: 10s
+      - paymybuddynetwork
 
 volumes:
-  paymybuddy_mysql_data:
+  db_paymybuddy:
 
 networks:
-  paymybuddy-network:
+  paymybuddynetwork:
     driver: bridge
