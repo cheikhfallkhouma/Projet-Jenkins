@@ -1,42 +1,27 @@
-version: '3.1'
-services:
-  paymybuddy:
-    image: ${DOCKERHUB_AUTH}/paymybuddy:latest
-    container_name: paymybuddy
-    restart: always
-    env_file:
-      - env/paymybuddy.env
-    environment:
-      SPRING_DATASOURCE_USERNAME: ${DB_USER}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-      SPRING_DATASOURCE_URL: jdbc:mysql://paymybuddydb:3306/paymybuddy
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-    depends_on:
-      - paymybuddydb
-    ports:
-      - "8080:8080"
-    networks:
-      - paymybuddynetwork
+version: '3.8'
 
-  paymybuddydb:
-    image: mysql:latest
-    container_name: paymybuddydb
-    restart: always
+services:
+  db:
+    image: mysql:8
+    container_name: paymybuddy_db
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: paymybuddy
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - db_paymybuddy:/var/lib/mysql
+      MYSQL_ROOT_PASSWORD: "__DB_ROOT_PASSWORD__"
+      MYSQL_DATABASE: "paymybuddy"
+      MYSQL_USER: "__DB_USER__"
+      MYSQL_PASSWORD: "__DB_PASSWORD__"
     ports:
       - "3306:3306"
-    networks:
-      - paymybuddynetwork
 
-volumes:
-  db_paymybuddy:
-
-networks:
-  paymybuddynetwork:
-    driver: bridge
+  app:
+    image: __DOCKER_IMAGE__
+    container_name: paymybuddy_app
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: paymybuddy
+      DB_USER: "__DB_USER__"
+      DB_PASSWORD: "__DB_PASSWORD__"
+    ports:
+      - "80:5000"
