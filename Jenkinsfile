@@ -124,16 +124,16 @@ pipeline {
 
                         # Générer docker-compose.yml avec les valeurs sensibles
                         cp docker-compose.template.yml docker-compose.yml
-                        // sed -i "s|__DB_USER__|${DB_USER}|g" docker-compose.yml
-                        // sed -i "s|__DB_PASSWORD__|${DB_PASSWORD}|g" docker-compose.yml
-                        // sed -i "s|__DB_ROOT_PASSWORD__|${DB_ROOT_PASSWORD}|g" docker-compose.yml
-                        // sed -i "s|__DOCKER_IMAGE__|${DOCKERHUB_AUTH}/paymybuddy:latest|g" docker-compose.yml
-                        
                         sed -i "s|__DB_USER__|${DB_USER}|g" docker-compose.yml
                         sed -i "s|__DB_PASSWORD__|${DB_PASSWORD}|g" docker-compose.yml
                         sed -i "s|__DB_ROOT_PASSWORD__|${DB_ROOT_PASSWORD}|g" docker-compose.yml
                         sed -i "s|__DOCKER_IMAGE__|${DOCKERHUB_AUTH}/paymybuddy:latest|g" docker-compose.yml
 
+                        # Donner les permissions d'exécution sur le fichier docker-compose.yml
+                        chmod +x docker-compose.yml
+
+                        # Vérifier la validité du fichier docker-compose
+                        docker-compose config
 
                         # Copier le fichier sur le serveur
                         scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
@@ -147,15 +147,15 @@ pipeline {
                             sudo usermod -aG docker ubuntu
 
                             echo 'Connexion DockerHub'
-                            echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
+                            echo '${DOCKERHUB_AUTH_PSW}' | sudo docker login -u '${DOCKERHUB_AUTH}' --password-stdin
 
                             cd /home/ubuntu
                             sudo apt install docker-compose -y
-                            docker-compose pull
-                            docker-compose down
-                            docker-compose up -d
+                            sudo docker-compose pull
+                            sudo docker-compose down --volumes
+                            sudo docker-compose up -d
 
-                            docker ps
+                            sudo docker ps
                             "
                         '''
                     }
