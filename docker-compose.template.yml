@@ -1,27 +1,28 @@
+
 version: '3.8'
 
 services:
   db:
-    image: mysql:8
+    image: mysql:8.0
     container_name: paymybuddy_db
     environment:
-      MYSQL_ROOT_PASSWORD: "__DB_ROOT_PASSWORD__"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       MYSQL_DATABASE: "paymybuddy"
-      MYSQL_USER: "__DB_USER__"
-      MYSQL_PASSWORD: "__DB_PASSWORD__"
+      MYSQL_USER: "${DB_USER}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
     ports:
       - "3306:3306"
 
   app:
-    image: __DOCKER_IMAGE__
+    image: "${IMAGE_NAME}"  
     container_name: paymybuddy_app
     depends_on:
       - db
     environment:
       DB_HOST: db
       DB_PORT: 3306
-      DB_NAME: paymybuddy
-      DB_USER: "__DB_USER__"
-      DB_PASSWORD: "__DB_PASSWORD__"
+      DB_NAME: "paymybuddy"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
     ports:
-      - "8080:5000"
+      - "8080:8080" 
