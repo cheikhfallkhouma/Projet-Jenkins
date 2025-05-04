@@ -1,27 +1,53 @@
-version: '3.8'
-
+version: '3.1'
 services:
-  db:
-    image: mysql:8
-    container_name: paymybuddy_db
+  paymybuddy:
+    image: ${IMAGE_VERSION}
+    container_name: paymybuddy
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: "__DB_ROOT_PASSWORD__"
-      MYSQL_DATABASE: "paymybuddy"
-      MYSQL_USER: "__DB_USER__"
-      MYSQL_PASSWORD: "__DB_PASSWORD__"
-    ports:
-      - "3306:3306"
-
-  app:
-    image: __DOCKER_IMAGE__
-    container_name: paymybuddy_app
-    depends_on:
-      - db
-    environment:
-      DB_HOST: db
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: paymybuddydb
       DB_PORT: 3306
       DB_NAME: paymybuddy
-      DB_USER: "__DB_USER__"
-      DB_PASSWORD: "__DB_PASSWORD__"
+    depends_on:
+      - paymybuddydb
     ports:
-      - "80:5000"
+      - "8080:8080"
+    networks:
+      - paymybuddynetwork
+
+  paymybuddydb:
+    image: mysql:8
+    container_name: paymybuddydb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: paymybuddy
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_paymybuddy:/var/lib/mysql
+      - ./initdb:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    networks:
+      - paymybuddynetwork
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+
+secrets:
+  db_user:
+    external: true
+  db_password:
+    external: true
+
+volumes:
+  db_paymybuddy:
+
+networks:
+  paymybuddynetwork:
+    driver: bridge
