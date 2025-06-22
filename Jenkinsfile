@@ -185,7 +185,7 @@ pipeline {
     environment {
         SONAR_TOKEN = credentials('SONAR_TOKEN')
         IMAGE_NAME = 'paymybuddy'
-        IMAGE_TAG = "${BUILD_NUMBER}-${GIT_COMMIT.take(7)}"
+        IMAGE_TAG = 'latest'
         PORT_EXPOSED = "80"
     }
 
