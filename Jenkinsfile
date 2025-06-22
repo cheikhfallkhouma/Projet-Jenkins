@@ -15,6 +15,7 @@ pipeline {
     }
 
     stages {
+
         stage('Tests Unitaires') {
             agent {
                 docker {
@@ -25,9 +26,7 @@ pipeline {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     echo "🕐 Début des tests unitaires : ${new Date()}"
-                    sh '''
-                        mvn clean test -B -V
-                    '''
+                    sh 'mvn clean test -B -V'
                     echo "✅ Fin des tests unitaires : ${new Date()}"
                 }
             }
@@ -43,9 +42,7 @@ pipeline {
             steps {
                 timeout(time: 15, unit: 'MINUTES') {
                     echo "🧪 Début des tests d'intégration : ${new Date()}"
-                    sh '''
-                        mvn verify -Pintegration-tests
-                    '''
+                    sh 'mvn verify -Pintegration-tests'
                     echo "✅ Fin des tests d'intégration : ${new Date()}"
                 }
             }
@@ -68,7 +65,7 @@ pipeline {
                             -Dsonar.organization=cheikhfallkhouma-1 \
                             -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
                     """
-                }   
+                }
             }
         }
 
@@ -87,13 +84,16 @@ pipeline {
                     args '-v $HOME/.m2:/root/.m2'
                 }
             }
-    steps {
-        sh 'mvn package -DskipTests'
-    }
-}
+            steps {
+                sh 'mvn package -DskipTests'
+                stash includes: 'target/paymybuddy.jar', name: 'built-jar'
+            }
+        }
 
         stage('Build Image and Push') {
             steps {
+                unstash 'built-jar'  // 🔁 Restaurer le jar dans le contexte du build
+
                 withCredentials([usernamePassword(
                     credentialsId: 'DOCKERHUB_AUTH',
                     usernameVariable: 'DOCKERHUB_AUTH',
@@ -110,7 +110,7 @@ pipeline {
 
         stage('Deploy in Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "23.22.211.169"
+                HOSTNAME_DEPLOY_STAGING = "54.174.238.234"
             }
             steps {
                 sshagent(credentials: ['SSH_AUTH_SERVER']) {
@@ -125,37 +125,34 @@ pipeline {
                         string(credentialsId: 'DB_ROOT_PASSWORD', variable: 'DB_ROOT_PASSWORD')
                     ]) {
                         sh '''
-                        [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
-                        ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
+                            [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
+                            ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
 
-                        # Générer docker-compose.yml avec les valeurs sensibles
-                        cp docker-compose.template.yml docker-compose.yml
-                        sed -i "s|__DB_USER__|${DB_USER}|g" docker-compose.yml
-                        sed -i "s|__DB_PASSWORD__|${DB_PASSWORD}|g" docker-compose.yml
-                        sed -i "s|__DB_ROOT_PASSWORD__|${DB_ROOT_PASSWORD}|g" docker-compose.yml
-                        sed -i "s|__DOCKER_IMAGE__|${DOCKERHUB_AUTH}/paymybuddy:latest|g" docker-compose.yml
+                            cp docker-compose.template.yml docker-compose.yml
+                            sed -i "s|__DB_USER__|${DB_USER}|g" docker-compose.yml
+                            sed -i "s|__DB_PASSWORD__|${DB_PASSWORD}|g" docker-compose.yml
+                            sed -i "s|__DB_ROOT_PASSWORD__|${DB_ROOT_PASSWORD}|g" docker-compose.yml
+                            sed -i "s|__DOCKER_IMAGE__|${DOCKERHUB_AUTH}/paymybuddy:latest|g" docker-compose.yml
 
-                        # Copier le fichier sur le serveur
-                        scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
+                            scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
 
-                        # Déploiement distant
-                        ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
-                            if ! command -v docker &> /dev/null; then
-                                curl -fsSL https://get.docker.com | sh
-                            fi
-                            sudo systemctl start docker || true
-                            sudo usermod -aG docker ubuntu
+                            ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                                if ! command -v docker &> /dev/null; then
+                                    curl -fsSL https://get.docker.com | sh
+                                fi
+                                sudo systemctl start docker || true
+                                sudo usermod -aG docker ubuntu
 
-                            echo 'Connexion DockerHub'
-                            echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
+                                echo 'Connexion DockerHub'
+                                echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
 
-                            cd /home/ubuntu
-                            sudo apt install docker-compose -y
-                            docker-compose pull
-                            docker-compose down
-                            docker-compose up -d
+                                cd /home/ubuntu
+                                sudo apt install docker-compose -y
+                                docker-compose pull
+                                docker-compose down
+                                docker-compose up -d
 
-                            docker ps
+                                docker ps
                             "
                         '''
                     }
@@ -173,6 +170,9 @@ pipeline {
         }
     }
 }
+
+
+
 
 // pipeline {
 //     agent {
