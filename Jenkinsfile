@@ -169,11 +169,11 @@
 // }
 
 
-pipeline {
 
+pipeline {
     agent {
         docker {
-            image 'maven:3.9.6-eclipse-temurin-17' 
+            image 'maven:3.9.6-eclipse-temurin-17'
             args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
@@ -181,7 +181,6 @@ pipeline {
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
         skipDefaultCheckout()
-        ansiColor('xterm')
         timestamps()
     }
 
@@ -208,7 +207,9 @@ pipeline {
                 }
             }
             steps {
-                sh 'mvn clean test -B -V'
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    sh 'mvn clean test -B -V'
+                }
             }
         }
 
@@ -220,7 +221,9 @@ pipeline {
                 }
             }
             steps {
-                sh 'mvn verify -Pintegration-tests'
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    sh 'mvn verify -Pintegration-tests'
+                }
             }
         }
 
@@ -232,14 +235,16 @@ pipeline {
                 }
             }
             steps {
-                withSonarQubeEnv('SonarCloud') {
-                    sh """
-                        mvn verify sonar:sonar \
-                            -Dsonar.login=${SONAR_TOKEN} \
-                            -Dsonar.host.url=https://sonarcloud.io \
-                            -Dsonar.organization=cheikhfallkhouma-1 \
-                            -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
-                    """
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    withSonarQubeEnv('SonarCloud') {
+                        sh """
+                            mvn verify sonar:sonar \
+                                -Dsonar.login=${SONAR_TOKEN} \
+                                -Dsonar.host.url=https://sonarcloud.io \
+                                -Dsonar.organization=cheikhfallkhouma-1 \
+                                -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
+                        """
+                    }
                 }
             }
         }
@@ -254,22 +259,26 @@ pipeline {
 
         stage('Package') {
             steps {
-                sh 'mvn package -DskipTests'
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    sh 'mvn package -DskipTests'
+                }
             }
         }
 
         stage('Build & Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'DOCKERHUB_AUTH',
-                    usernameVariable: 'DOCKERHUB_AUTH',
-                    passwordVariable: 'DOCKERHUB_AUTH_PSW'
-                )]) {
-                    sh '''
-                        echo "${DOCKERHUB_AUTH_PSW}" | docker login -u "${DOCKERHUB_AUTH}" --password-stdin
-                        docker build -t ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG} .
-                        docker push ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
-                    '''
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'DOCKERHUB_AUTH',
+                        usernameVariable: 'DOCKERHUB_AUTH',
+                        passwordVariable: 'DOCKERHUB_AUTH_PSW'
+                    )]) {
+                        sh '''
+                            echo "${DOCKERHUB_AUTH_PSW}" | docker login -u "${DOCKERHUB_AUTH}" --password-stdin
+                            docker build -t ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG} .
+                            docker push ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
+                        '''
+                    }
                 }
             }
         }
@@ -279,44 +288,46 @@ pipeline {
                 HOSTNAME_DEPLOY_STAGING = "23.22.211.169"
             }
             steps {
-                sshagent(credentials: ['SSH_AUTH_SERVER']) {
-                    withCredentials([
-                        usernamePassword(credentialsId: 'DOCKERHUB_AUTH', usernameVariable: 'DOCKERHUB_AUTH', passwordVariable: 'DOCKERHUB_AUTH_PSW'),
-                        string(credentialsId: 'DB_USER', variable: 'DB_USER'),
-                        string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
-                        string(credentialsId: 'DB_ROOT_PASSWORD', variable: 'DB_ROOT_PASSWORD')
-                    ]) {
-                        sh '''
-                        set +x  # Masquer les secrets
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    sshagent(credentials: ['SSH_AUTH_SERVER']) {
+                        withCredentials([
+                            usernamePassword(credentialsId: 'DOCKERHUB_AUTH', usernameVariable: 'DOCKERHUB_AUTH', passwordVariable: 'DOCKERHUB_AUTH_PSW'),
+                            string(credentialsId: 'DB_USER', variable: 'DB_USER'),
+                            string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
+                            string(credentialsId: 'DB_ROOT_PASSWORD', variable: 'DB_ROOT_PASSWORD')
+                        ]) {
+                            sh '''
+                            set +x
 
-                        mkdir -p ~/.ssh && chmod 700 ~/.ssh
-                        ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
+                            mkdir -p ~/.ssh && chmod 700 ~/.ssh
+                            ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
 
-                        TMP_DOCKER_COMPOSE="/tmp/docker-compose.staging.yml"
-                        cp docker-compose.template.yml $TMP_DOCKER_COMPOSE
+                            TMP_DOCKER_COMPOSE="/tmp/docker-compose.staging.yml"
+                            cp docker-compose.template.yml $TMP_DOCKER_COMPOSE
 
-                        sed -i "s|__DB_USER__|${DB_USER}|g" $TMP_DOCKER_COMPOSE
-                        sed -i "s|__DB_PASSWORD__|${DB_PASSWORD}|g" $TMP_DOCKER_COMPOSE
-                        sed -i "s|__DB_ROOT_PASSWORD__|${DB_ROOT_PASSWORD}|g" $TMP_DOCKER_COMPOSE
-                        sed -i "s|__DOCKER_IMAGE__|${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}|g" $TMP_DOCKER_COMPOSE
+                            sed -i "s|__DB_USER__|${DB_USER}|g" $TMP_DOCKER_COMPOSE
+                            sed -i "s|__DB_PASSWORD__|${DB_PASSWORD}|g" $TMP_DOCKER_COMPOSE
+                            sed -i "s|__DB_ROOT_PASSWORD__|${DB_ROOT_PASSWORD}|g" $TMP_DOCKER_COMPOSE
+                            sed -i "s|__DOCKER_IMAGE__|${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}|g" $TMP_DOCKER_COMPOSE
 
-                        docker-compose -f $TMP_DOCKER_COMPOSE config
+                            docker-compose -f $TMP_DOCKER_COMPOSE config
 
-                        scp $TMP_DOCKER_COMPOSE ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.staging.yml
+                            scp $TMP_DOCKER_COMPOSE ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.staging.yml
 
-                        ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
-                            curl -fsSL https://get.docker.com | sh || true
-                            sudo systemctl start docker || true
+                            ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                                curl -fsSL https://get.docker.com | sh || true
+                                sudo systemctl start docker || true
 
-                            echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
+                                echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
 
-                            cd /home/ubuntu
-                            sudo apt update && sudo apt install -y docker-compose
-                            docker-compose -f docker-compose.staging.yml pull
-                            docker-compose -f docker-compose.staging.yml down || true
-                            docker-compose -f docker-compose.staging.yml up -d
-                        "
-                        '''
+                                cd /home/ubuntu
+                                sudo apt update && sudo apt install -y docker-compose
+                                docker-compose -f docker-compose.staging.yml pull
+                                docker-compose -f docker-compose.staging.yml down || true
+                                docker-compose -f docker-compose.staging.yml up -d
+                            "
+                            '''
+                        }
                     }
                 }
             }
