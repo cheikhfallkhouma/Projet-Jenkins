@@ -15,6 +15,7 @@ pipeline {
     }
 
     stages {
+
         stage('Tests Unitaires') {
             agent {
                 docker {
@@ -99,47 +100,63 @@ pipeline {
         }
 
         stage('Deploy in Staging') {
-    agent none
-    environment {
-        HOSTNAME_DEPLOY_STAGING = "23.22.211.169"
-    }
-    steps {
-        node {
-            sshagent(credentials: ['SSH_AUTH_SERVER']) {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'DOCKERHUB_AUTH',
-                        usernameVariable: 'DOCKERHUB_AUTH',
-                        passwordVariable: 'DOCKERHUB_AUTH_PSW'
-                    )
-                ]) {
-                    sh '''
-                        mkdir -p ~/.ssh && chmod 0700 ~/.ssh
-                        ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
+            agent none
+            environment {
+                HOSTNAME_DEPLOY_STAGING = "23.22.211.169"
+            }
+            steps {
+                node {
+                    sshagent(credentials: ['SSH_AUTH_SERVER']) {
+                        withCredentials([
+                            usernamePassword(
+                                credentialsId: 'DOCKERHUB_AUTH',
+                                usernameVariable: 'DOCKERHUB_AUTH',
+                                passwordVariable: 'DOCKERHUB_AUTH_PSW'
+                            )
+                        ]) {
+                            sh """
+                                mkdir -p ~/.ssh && chmod 0700 ~/.ssh
+                                ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
 
-                        scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
+                                echo '📦 Copie du docker-compose.yml...'
+                                scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
+                            """
 
-                        ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} << EOF
-                            if ! command -v docker &> /dev/null; then
-                                curl -fsSL https://get.docker.com | sh
-                            fi
+                            sh """
+                                ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} 'bash -s' <<'EOF'
+                                    if ! command -v docker &> /dev/null; then
+                                        curl -fsSL https://get.docker.com | sh
+                                    fi
 
-                            if ! command -v docker-compose &> /dev/null; then
-                                sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
-                                sudo chmod +x /usr/local/bin/docker-compose
-                            fi
+                                    if ! command -v docker-compose &> /dev/null; then
+                                        sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
+                                        sudo chmod +x /usr/local/bin/docker-compose
+                                    fi
 
-                            echo "${DOCKERHUB_AUTH_PSW}" | docker login -u "${DOCKERHUB_AUTH}" --password-stdin
+                                    echo "${DOCKERHUB_AUTH_PSW}" | docker login -u "${DOCKERHUB_AUTH}" --password-stdin
 
-                            cd /home/ubuntu
-                            docker-compose pull
-                            docker-compose down
-                            docker-compose up -d
-                            docker ps
-                        EOF
-                    '''
+                                    cd /home/ubuntu
+                                    docker-compose pull
+                                    docker-compose down
+                                    docker-compose up -d
+
+                                    docker ps
+                                    curl -s http://localhost:${PORT_EXPOSED} || echo "❌ L'application ne répond pas sur le port ${PORT_EXPOSED}"
+                                EOF
+                            """
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline terminée avec succès.'
+        }
+        failure {
+            echo '❌ Échec de la pipeline.'
         }
     }
 }
