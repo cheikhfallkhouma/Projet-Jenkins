@@ -106,6 +106,7 @@ pipeline {
         }
 
         stage('Deploy in staging') {
+            agent none
             environment {
                 HOSTNAME_DEPLOY_STAGING = "34.241.129.208"
             }
