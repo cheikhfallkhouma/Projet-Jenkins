@@ -99,6 +99,7 @@ pipeline {
         }
 
         stage('Deploy in Staging') {
+            agent any
             environment {
                 HOSTNAME_DEPLOY_STAGING = "52.91.199.18"
             }
