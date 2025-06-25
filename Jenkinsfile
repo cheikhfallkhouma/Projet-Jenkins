@@ -99,7 +99,8 @@ pipeline {
         }
 
         stage('Deploy in Staging') {
-            agent { label 'master' }  // <== Mets ici le label de ton agent Jenkins
+            agent none
+            
             environment {
                 HOSTNAME_DEPLOY_STAGING = "23.22.211.169"
             }
