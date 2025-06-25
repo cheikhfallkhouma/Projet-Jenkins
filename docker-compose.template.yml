@@ -5,22 +5,21 @@ services:
     image: mysql:8
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: "__DB_ROOT_PASSWORD__"
+      MYSQL_ROOT_PASSWORD: "$MYSQL_ROOT_PASSWORD"
       MYSQL_DATABASE: db_paymybuddy
-      MYSQL_USER: "__DB_USER__"
-      MYSQL_PASSWORD: "__DB_PASSWORD__"
+      MYSQL_USER: "$MYSQL_USER"
     ports:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
 
   app:
-    image: "__DOCKER_IMAGE__"
+    image: "$DOCKER_IMAGE"
     restart: always
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/db_paymybuddy
-      SPRING_DATASOURCE_USERNAME: "__DB_USER__"
-      SPRING_DATASOURCE_PASSWORD: "__DB_PASSWORD__"
+      SPRING_DATASOURCE_USERNAME: "$MYSQL_USER"
+      SPRING_DATASOURCE_PASSWORD: "$MYSQL_PASSWORD"
     ports:
       - "80:5000"
     depends_on:
