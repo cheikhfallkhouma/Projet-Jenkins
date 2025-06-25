@@ -114,9 +114,9 @@ pipeline {
                 sshagent(credentials: ['SSH_AUTH_SERVER']) {
                     withCredentials([
                         string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
-                        string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
+                       // string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
                         string(credentialsId: 'MYSQL_ROOT_PASSWORD', variable: 'MYSQL_ROOT_PASSWORD'),
-                        usernamePassword(MYSQL_ROOT_PASSWORD
+                        usernamePassword(
                         credentialsId: 'DOCKERHUB_AUTH',
                         usernameVariable: 'DOCKERHUB_AUTH',
                         passwordVariable: 'DOCKERHUB_AUTH_PSW'
