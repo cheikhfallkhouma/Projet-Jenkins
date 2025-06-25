@@ -106,17 +106,17 @@ pipeline {
         }
 
         stage('Deploy in staging') {
-            agent { label 'any' }
+            agent none
             environment {
                 HOSTNAME_DEPLOY_STAGING = "52.91.199.18"
             }
             steps {
                 sshagent(credentials: ['SSH_AUTH_SERVER']) {
                     withCredentials([
-                        string(credentialsId: 'DB_USER', variable: 'DB_USER'),
+                        string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
                         string(credentialsId: 'DB_PASSWORD', variable: 'DB_PASSWORD'),
-                        string(credentialsId: 'DB_ROOT_PASSWORD', variable: 'DB_ROOT_PASSWORD'),
-                        usernamePassword(
+                        string(credentialsId: 'MYSQL_ROOT_PASSWORD', variable: 'MYSQL_ROOT_PASSWORD'),
+                        usernamePassword(MYSQL_ROOT_PASSWORD
                         credentialsId: 'DOCKERHUB_AUTH',
                         usernameVariable: 'DOCKERHUB_AUTH',
                         passwordVariable: 'DOCKERHUB_AUTH_PSW'
