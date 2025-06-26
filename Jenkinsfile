@@ -337,6 +337,12 @@ EOF
                                 '"
                             """
 
+                            echo "🔍 Vérification du contenu des fichiers sur le serveur"
+                            sh """
+                                ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "cat /home/ubuntu/.env"
+                                ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "cat /home/ubuntu/docker-compose.yaml"
+                            """
+
                             echo "🚀 Lancement du déploiement Docker Compose"
                             sh """
                                 ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} bash -c "'
