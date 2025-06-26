@@ -127,12 +127,18 @@ pipeline {
                         string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD'),
                     ]) {
                         script {
-                            sh '''
+                            // sh '''
+                            //     echo "🔐 Ajout de la machine distante à known_hosts"
+                            //     mkdir -p ~/.ssh
+                            //     chmod 700 ~/.ssh
+                            //     ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
+                            // '''
+                            sh """
                                 echo "🔐 Ajout de la machine distante à known_hosts"
                                 mkdir -p ~/.ssh
                                 chmod 700 ~/.ssh
                                 ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
-                            '''
+                            """
 
                             echo "📦 Copie du fichier docker-compose.yml vers le serveur"
                             sh "scp -v docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml"
