@@ -12,8 +12,6 @@ pipeline {
         PORT_EXPOSED = "80"
         IMAGE_NAME = 'paymybuddy'
         IMAGE_TAG = 'latest'
-        // Pas de DOCKERHUB_AUTH ici car récupéré via withCredentials
-        // Idem pour MYSQL_ROOT_PASSWORD, MYSQL_USER, MYSQL_PASSWORD si besoin
     }
 
     stages {
@@ -124,28 +122,29 @@ pipeline {
                         ),
                         string(credentialsId: 'MYSQL_ROOT_PASSWORD', variable: 'MYSQL_ROOT_PASSWORD'),
                         string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
-                        string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD'),
+                        string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD')
                     ]) {
                         script {
-                            // sh '''
-                            //     echo "🔐 Ajout de la machine distante à known_hosts"
-                            //     mkdir -p ~/.ssh
-                            //     chmod 700 ~/.ssh
-                            //     ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
-                            // '''
-                            sh """
+                            sh '''
                                 echo "🔐 Ajout de la machine distante à known_hosts"
                                 mkdir -p ~/.ssh
                                 chmod 700 ~/.ssh
                                 ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
-                            """
+                            '''
 
                             echo "📦 Copie du fichier docker-compose.yml vers le serveur"
-                            sh "scp -v docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml"
+                            sh "scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml"
 
                             echo "📝 Création dynamique du fichier .env sur le serveur"
                             sh """
-                                ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "printf 'MYSQL_ROOT_PASSWORD=%s\\nMYSQL_USER=%s\\nMYSQL_PASSWORD=%s\\nDOCKER_IMAGE=%s\\n' '${MYSQL_ROOT_PASSWORD}' '${MYSQL_USER}' '${MYSQL_PASSWORD}' '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}' > /home/ubuntu/.env"
+                                ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} bash -c "'
+                                    cat > /home/ubuntu/.env <<EOF
+MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+MYSQL_USER=${MYSQL_USER}
+MYSQL_PASSWORD=${MYSQL_PASSWORD}
+DOCKER_IMAGE=${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
+EOF
+                                '"
                             """
 
                             echo "🚀 Lancement du déploiement Docker Compose"
@@ -161,6 +160,7 @@ pipeline {
                                     fi
 
                                     sudo usermod -aG docker ubuntu
+                                    newgrp docker || true
 
                                     cd /home/ubuntu
                                     echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
@@ -186,3 +186,4 @@ pipeline {
         }
     }
 }
+
