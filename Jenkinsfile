@@ -110,7 +110,7 @@ pipeline {
 
         stage('Deploy in Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "52.91.199.18"
+                HOSTNAME_DEPLOY_STAGING = "54.89.17.17"
             }
             steps {
                 sshagent(credentials: ['SSH_AUTH_SERVER']) {
