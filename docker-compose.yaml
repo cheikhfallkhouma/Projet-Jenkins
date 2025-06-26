@@ -18,10 +18,8 @@ services:
     depends_on:
       - db
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_NAME: paymybuddy
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/paymybuddy
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "80:5000"
+      - "80:8080"
