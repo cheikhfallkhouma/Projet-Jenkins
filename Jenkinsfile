@@ -183,32 +183,28 @@ pipeline {
                 // Exécuter les commandes sur la machine distante
                 sh """
                     ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} bash -c "'
-                        # Installer Docker si pas présent
+                        # Installer docker si besoin
                         if ! command -v docker &> /dev/null; then
                             curl -fsSL https://get.docker.com | sh
                         fi
 
-                        # Installer docker-compose si pas présent
+                        # Installer docker-compose si besoin
                         if ! command -v docker-compose &> /dev/null; then
-                            sudo curl -L \\"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)\\" -o /usr/local/bin/docker-compose
+                            sudo curl -L \"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)\" -o /usr/local/bin/docker-compose
                             sudo chmod +x /usr/local/bin/docker-compose
                         fi
 
-                        sudo systemctl start docker || true
+                        # Ajouter ubuntu au groupe docker
+                        sudo usermod -aG docker ubuntu
 
-                        # Ajouter ubuntu au groupe docker seulement après installation
-                        if getent group docker > /dev/null; then
-                            sudo usermod -aG docker ubuntu || true
-                        fi
+                        # Recharge les groupes pour la session actuelle
+                        newgrp docker || true
 
-                        # Login docker
-                        echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
-
+                        # Utiliser sudo pour docker-compose pour être sûr
                         cd /home/ubuntu
-                        docker-compose pull
-                        docker-compose down
-                        docker-compose up -d
-                        docker ps
+                        sudo docker-compose pull
+                        sudo docker-compose down
+                        sudo docker-compose up -d
                     '"
                 """
             }
