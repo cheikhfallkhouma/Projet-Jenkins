@@ -1,16 +1,17 @@
 pipeline {
+
     agent {
         docker {
-            image 'maven:3.9.6-eclipse-temurin-17'
+            image 'maven:3.9.9-amazoncorretto-8-al2023'
             args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
 
     environment {
         SONAR_TOKEN = credentials('SONAR_TOKEN')
-        PORT_EXPOSED = "8080"
+        PORT_EXPOSED = "80"
         IMAGE_NAME = 'paymybuddy'
-        IMAGE_TAG = 'lastest'
+        IMAGE_TAG = 'latest'
     }
 
     stages {
@@ -23,12 +24,11 @@ pipeline {
             }
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
-                    echo "🕐 Début de la compilation : ${new Date()}"
+                    echo "🕐 Début des tests unitaires : ${new Date()}"
                     sh '''
-                        echo "🚀 Lancement de mvn clean test..."
                         mvn clean test -B -V
                     '''
-                    echo "✅ Fin de la compilation : ${new Date()}"
+                    echo "✅ Fin des tests unitaires : ${new Date()}"
                 }
             }
         }
@@ -44,7 +44,6 @@ pipeline {
                 timeout(time: 15, unit: 'MINUTES') {
                     echo "🧪 Début des tests d'intégration : ${new Date()}"
                     sh '''
-                        echo "🚀 Lancement des tests d’intégration..."
                         mvn verify -Pintegration-tests
                     '''
                     echo "✅ Fin des tests d'intégration : ${new Date()}"
@@ -61,15 +60,15 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('SonarCloud') {
-                    echo '📊 Lancement de l’analyse SonarCloud...'
+                    echo '📊 Analyse SonarCloud...'
                     sh """
                         mvn verify sonar:sonar \
                             -Dsonar.login=${SONAR_TOKEN} \
                             -Dsonar.host.url=https://sonarcloud.io \
-                            -Dsonar.organization=cheikhfallkhouma-1 \
-                            -Dsonar.projectKey=cheikhfallkhouma_Projet-Jenkins
+                            -Dsonar.organization=xxxx-1 \
+                            -Dsonar.projectKey=xxxxxx-Jenkins
                     """
-                }
+                }   
             }
         }
 
@@ -87,7 +86,7 @@ pipeline {
             }
         }
 
-        stage('Build Image and push image') {
+        stage('Build Image and Push') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'DOCKERHUB_AUTH',
@@ -97,22 +96,19 @@ pipeline {
                     sh '''
                         echo "${DOCKERHUB_AUTH_PSW}" | docker login -u "${DOCKERHUB_AUTH}" --password-stdin
                         docker build -t ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG} .
-                        docker push ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}            
+                        docker push ${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
                     '''
                 }
             }
         }
 
-        stage('Deploy in staging') {
-            agent any
+        stage('Deploy in Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "52.91.199.18"
+                HOSTNAME_DEPLOY_STAGING = "23.22.211.169"
             }
             steps {
                 sshagent(credentials: ['SSH_AUTH_SERVER']) {
                     withCredentials([
-                        string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
-                        string(credentialsId: 'MYSQL_ROOT_PASSWORD', variable: 'MYSQL_ROOT_PASSWORD'),
                         usernamePassword(
                             credentialsId: 'DOCKERHUB_AUTH',
                             usernameVariable: 'DOCKERHUB_AUTH',
@@ -120,28 +116,40 @@ pipeline {
                         )
                     ]) {
                         sh '''
-                            mkdir -p ~/.ssh && chmod 700 ~/.ssh
-                            ssh-keyscan -H ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
+                            [ -d ~/.ssh ] || mkdir -p ~/.ssh && chmod 0700 ~/.ssh
+                            ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
 
-                            echo "🔧 Connexion SSH à ${HOSTNAME_DEPLOY_STAGING}..."
+                            # Installer docker-compose si non installé
                             ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
-                                if ! command -v docker &> /dev/null; then
-                                    echo '⚙️ Docker non installé. Installation...'
-                                    curl -fsSL https://get.docker.com | sh
+                                if ! command -v docker-compose &> /dev/null; then
+                                    sudo curl -L 'https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)' -o /usr/local/bin/docker-compose;
+                                    sudo chmod +x /usr/local/bin/docker-compose;
                                 fi
-                                sudo systemctl start docker || true
-                                sudo usermod -aG docker ubuntu
-                            "
 
-                            echo "🐳 Pull et déploiement de l'image Docker..."
-                            ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
-                                docker login -u '${DOCKERHUB_AUTH}' -p '${DOCKERHUB_AUTH_PSW}'
-                                docker pull '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}'
-                                docker rm -f paymaybuddywebapp || true
-                                docker run -d -p 80:5000 -e PORT=5000 --name paymaybuddywebapp '${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}'
-                                sleep 3
-                                docker ps -a --filter name=paymaybuddywebapp
-                                docker logs paymaybuddywebapp
+                                # Ajouter l'utilisateur ubuntu au groupe docker pour éviter sudo
+                                sudo usermod -aG docker ubuntu
+
+                                # Copier docker-compose.yml sur le serveur
+                                scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml
+
+                                # Connexion et déploiement
+                                ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "
+                                    if ! command -v docker &> /dev/null; then
+                                        curl -fsSL https://get.docker.com | sh
+                                    fi
+                                    sudo systemctl start docker || true
+                                    sudo usermod -aG docker ubuntu
+
+                                    echo 'Login DockerHub et mise à jour de l\'image'
+                                    echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
+
+                                    cd /home/ubuntu
+                                    docker-compose pull
+                                    docker-compose down
+                                    docker-compose up -d
+
+                                    docker ps
+                                "
                             "
                         '''
                     }
