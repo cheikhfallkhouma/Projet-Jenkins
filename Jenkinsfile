@@ -360,7 +360,8 @@ EOF
                                     done
 
                                     # Exécuter le script SQL via TCP
-                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -h 127.0.0.1 -u root -p${MYSQL_ROOT_PASSWORD}
+                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD}
+
                                 '"
                             """
                         }
