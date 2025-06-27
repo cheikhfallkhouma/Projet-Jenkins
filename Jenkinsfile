@@ -376,7 +376,7 @@ EOF
             echo '✅ Pipeline terminée avec succès.'
         }
         failure {
-            echo '❌ Échec de la pipeline'
+            echo '❌ Échec de la pipeline!'
         }
     }
 }
