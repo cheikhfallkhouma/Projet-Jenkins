@@ -142,13 +142,10 @@
 //                                 '"
 //                             """
 
-//                             echo "🔍 Vérification du contenu des fichiers sur le serveur"
-//                             sh """
-//                                 ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "cat /home/ubuntu/.env"
-//                                 ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "cat /home/ubuntu/docker-compose.yaml"
-//                             """
+//                             echo "📤 Copie du fichier create.sql vers le serveur"
+//                             sh "scp src/main/resources/database/create.sql ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/create.sql"
 
-//                             echo "🚀 Lancement du déploiement Docker Compose"
+//                             echo "🚀 Lancement du déploiement Docker Compose et initialisation MySQL"
 //                             sh """
 //                                 ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} bash -c "'
 //                                     cd /home/ubuntu
@@ -167,6 +164,16 @@
 //                                     sudo docker-compose --env-file .env pull
 //                                     sudo docker-compose --env-file .env down
 //                                     sudo docker-compose --env-file .env up -d
+
+//                                     # Attendre que MySQL soit prêt
+//                                     until sudo docker exec paymybuddy_db mysqladmin ping -h localhost --silent; do
+//                                         echo \"⏳ Attente que MySQL soit prêt...\"
+//                                         sleep 5
+//                                     done
+
+//                                     # Exécuter le script SQL via TCP
+//                                     cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD}
+
 //                                 '"
 //                             """
 //                         }
@@ -185,6 +192,7 @@
 //         }
 //     }
 // }
+
 
 pipeline {
     agent {
@@ -359,8 +367,8 @@ EOF
                                         sleep 5
                                     done
 
-                                    # Exécuter le script SQL via TCP
-                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD}
+                                    # ✅ Exécuter le script SQL dans la base 'paymybuddy'
+                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddy
 
                                 '"
                             """
