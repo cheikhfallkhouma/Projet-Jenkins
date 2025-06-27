@@ -369,6 +369,8 @@ EOF
 
                                     # Exécuter le script SQL sur la base paymybuddy
                                     cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddy
+                                    cd /home/ubuntu
+                                    sudo docker-compose restart app
                                 '"
                             """
                         }
