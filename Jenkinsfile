@@ -1,5 +1,4 @@
 // pipeline {
-
 //     agent {
 //         docker {
 //             image 'maven:3.9.9-amazoncorretto-8-al2023'
@@ -25,9 +24,7 @@
 //             steps {
 //                 timeout(time: 10, unit: 'MINUTES') {
 //                     echo "🕐 Début des tests unitaires : ${new Date()}"
-//                     sh '''
-//                         mvn clean test -B -V
-//                     '''
+//                     sh 'mvn clean test -B -V'
 //                     echo "✅ Fin des tests unitaires : ${new Date()}"
 //                 }
 //             }
@@ -43,9 +40,7 @@
 //             steps {
 //                 timeout(time: 15, unit: 'MINUTES') {
 //                     echo "🧪 Début des tests d'intégration : ${new Date()}"
-//                     sh '''
-//                         mvn verify -Pintegration-tests
-//                     '''
+//                     sh 'mvn verify -Pintegration-tests'
 //                     echo "✅ Fin des tests d'intégration : ${new Date()}"
 //                 }
 //             }
@@ -132,8 +127,8 @@
 //                                 ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
 //                             '''
 
-//                             echo "📦 Copie du fichier docker-compose.yml vers le serveur"
-//                             sh "scp docker-compose.yml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yml"
+//                             echo "📦 Copie du fichier docker-compose.yaml vers le serveur"
+//                             sh "scp docker-compose.yaml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yaml"
 
 //                             echo "📝 Création dynamique du fichier .env sur le serveur"
 //                             sh """
@@ -142,20 +137,24 @@
 // MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
 // MYSQL_USER=${MYSQL_USER}
 // MYSQL_PASSWORD=${MYSQL_PASSWORD}
-
-// DB_USER_PLACEHOLDER=${MYSQL_USER}
-// DB_PASSWORD_PLACEHOLDER=${MYSQL_PASSWORD}
-
-// DOCKERHUB_AUTH=${DOCKERHUB_AUTH}
-// IMAGE_NAME=${IMAGE_NAME}
-// IMAGE_TAG=${IMAGE_TAG}
+// DOCKER_IMAGE=${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
 // EOF
 //                                 '"
+//                             """
+
+//                             echo "🔍 Vérification du contenu des fichiers sur le serveur"
+//                             sh """
+//                                 ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "cat /home/ubuntu/.env"
+//                                 ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "cat /home/ubuntu/docker-compose.yaml"
 //                             """
 
 //                             echo "🚀 Lancement du déploiement Docker Compose"
 //                             sh """
 //                                 ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} bash -c "'
+//                                     cd /home/ubuntu
+
+//                                     echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
+
 //                                     if ! command -v docker &> /dev/null; then
 //                                         curl -fsSL https://get.docker.com | sh
 //                                     fi
@@ -165,15 +164,9 @@
 //                                         sudo chmod +x /usr/local/bin/docker-compose
 //                                     fi
 
-//                                     sudo usermod -aG docker ubuntu
-//                                     newgrp docker || true
-
-//                                     cd /home/ubuntu
-//                                     echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
-
-//                                     sudo docker-compose pull
-//                                     sudo docker-compose down
-//                                     sudo docker-compose up -d
+//                                     sudo docker-compose --env-file .env pull
+//                                     sudo docker-compose --env-file .env down
+//                                     sudo docker-compose --env-file .env up -d
 //                                 '"
 //                             """
 //                         }
@@ -337,11 +330,8 @@ EOF
                                 '"
                             """
 
-                            echo "🔍 Vérification du contenu des fichiers sur le serveur"
-                            sh """
-                                ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "cat /home/ubuntu/.env"
-                                ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} "cat /home/ubuntu/docker-compose.yaml"
-                            """
+                            echo "📤 Copie du fichier create.sql vers le serveur"
+                            sh "scp src/main/resources/database/create.sql ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/create.sql"
 
                             echo "🚀 Lancement du déploiement Docker Compose"
                             sh """
@@ -362,6 +352,9 @@ EOF
                                     sudo docker-compose --env-file .env pull
                                     sudo docker-compose --env-file .env down
                                     sudo docker-compose --env-file .env up -d
+
+                                    echo "⚙️ Exécution du script d'initialisation SQL dans le container MySQL"
+                                    sudo docker exec paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} < /home/ubuntu/create.sql
                                 '"
                             """
                         }
