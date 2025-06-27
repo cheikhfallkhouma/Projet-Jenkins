@@ -367,9 +367,8 @@ EOF
                                         sleep 5
                                     done
 
-                                    # ✅ Exécuter le script SQL dans la base 'paymybuddy'
+                                    # Exécuter le script SQL sur la base paymybuddy
                                     cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddy
-
                                 '"
                             """
                         }
