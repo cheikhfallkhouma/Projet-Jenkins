@@ -333,7 +333,7 @@ EOF
                             echo "📤 Copie du fichier create.sql vers le serveur"
                             sh "scp src/main/resources/database/create.sql ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/create.sql"
 
-                            echo "🚀 Lancement du déploiement Docker Compose"
+                            echo "🚀 Lancement du déploiement Docker Compose et exécution du script SQL"
                             sh """
                                 ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} bash -c "'
                                     cd /home/ubuntu
@@ -353,8 +353,7 @@ EOF
                                     sudo docker-compose --env-file .env down
                                     sudo docker-compose --env-file .env up -d
 
-                                    echo "⚙️ Exécution du script d'initialisation SQL dans le container MySQL"
-                                    sudo docker exec paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} < /home/ubuntu/create.sql
+                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD}
                                 '"
                             """
                         }
