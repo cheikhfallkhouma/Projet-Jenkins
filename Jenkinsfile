@@ -304,7 +304,9 @@ pipeline {
             environment {
                 HOSTNAME_DEPLOY_STAGING = "54.173.30.186"
             }
+            
             steps {
+                sh 'apt-get update && apt-get install -y openssh-client || true'
                 sshagent(credentials: ['SSH_AUTH_SERVER']) {
                     withCredentials([
                         usernamePassword(
