@@ -302,7 +302,7 @@ pipeline {
 
         stage('Deploy in Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "54.173.30.186"
+                HOSTNAME_DEPLOY_STAGING = "34.227.58.139"
             }
             
             steps {
