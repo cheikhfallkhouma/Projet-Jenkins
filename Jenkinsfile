@@ -391,4 +391,21 @@ EOF
             echo '❌ Échec de la pipeline!'
         }
     }
-}
+
+    post {
+        success {
+            slackSend(
+                channel: '#tous-devops-cicd',
+                color: 'good',
+                message: "✅ *${env.JOB_NAME}* build #${env.BUILD_NUMBER} a réussi ! (<${env.BUILD_URL}|Voir les détails>)"
+            )
+        }
+        failure {
+            slackSend(
+                channel: '#tous-devops-cicd',
+                color: 'danger',
+                message: "❌ *${env.JOB_NAME}* build #${env.BUILD_NUMBER} a échoué ! (<${env.BUILD_URL}|Voir les détails>)"
+            )
+        }
+    }
+ }
