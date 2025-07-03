@@ -386,14 +386,6 @@ EOF
     post {
         success {
             echo '✅ Pipeline terminée avec succès.'
-        }
-        failure {
-            echo '❌ Échec de la pipeline!'
-        }
-    }
-
-    post {
-        success {
             slackSend(
                 channel: '#tous-devops-cicd',
                 color: 'good',
@@ -401,6 +393,7 @@ EOF
             )
         }
         failure {
+            echo '❌ Échec de la pipeline!'
             slackSend(
                 channel: '#tous-devops-cicd',
                 color: 'danger',
@@ -408,4 +401,4 @@ EOF
             )
         }
     }
- }
+}
