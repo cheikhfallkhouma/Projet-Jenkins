@@ -212,12 +212,12 @@ pipeline {
 
     stages {
         stage('Tests Unitaires') {
-            agent {
-                docker {
-                    image 'maven:3.9.6-eclipse-temurin-17'
-                    args '-v $HOME/.m2:/root/.m2'
-                }
-            }
+            // agent {
+            //     docker {
+            //         image 'maven:3.9.6-eclipse-temurin-17'
+            //         args '-v $HOME/.m2:/root/.m2'
+            //     }
+            // }
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     echo "🕐 Début des tests unitaires : ${new Date()}"
@@ -228,12 +228,12 @@ pipeline {
         }
 
         stage('Tests d’Intégration') {
-            agent {
-                docker {
-                    image 'maven:3.9.6-eclipse-temurin-17'
-                    args '-v $HOME/.m2:/root/.m2'
-                }
-            }
+            // agent {
+            //     docker {
+            //         image 'maven:3.9.6-eclipse-temurin-17'
+            //         args '-v $HOME/.m2:/root/.m2'
+            //     }
+            // }
             steps {
                 timeout(time: 15, unit: 'MINUTES') {
                     echo "🧪 Début des tests d'intégration : ${new Date()}"
@@ -244,12 +244,12 @@ pipeline {
         }
 
         stage('Analyse SonarCloud') {
-            agent {
-                docker {
-                    image 'maven:3.9.6-eclipse-temurin-17'
-                    args '-v $HOME/.m2:/root/.m2'
-                }
-            }
+            // agent {
+            //     docker {
+            //         image 'maven:3.9.6-eclipse-temurin-17'
+            //         args '-v $HOME/.m2:/root/.m2'
+            //     }
+            // }
             steps {
                 withSonarQubeEnv('SonarCloud') {
                     echo '📊 Analyse SonarCloud...'
