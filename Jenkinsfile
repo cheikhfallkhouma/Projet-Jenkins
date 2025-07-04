@@ -362,6 +362,88 @@ EOF
                 }
             }
         }
+
+        stage('Deploy in Staging') {
+            environment {
+                HOSTNAME_DEPLOY_PROD = "18.206.212.185"
+            }
+            
+            steps {
+                sh 'apt-get update && apt-get install -y openssh-client || true'
+                sshagent(credentials: ['SSH_AUTH_SERVER']) {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'DOCKERHUB_AUTH',
+                            usernameVariable: 'DOCKERHUB_AUTH',
+                            passwordVariable: 'DOCKERHUB_AUTH_PSW'
+                        ),
+                        string(credentialsId: 'MYSQL_ROOT_PASSWORD', variable: 'MYSQL_ROOT_PASSWORD'),
+                        string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
+                        string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD')
+                    ]) {
+                        script {
+                            sh '''
+                                echo "🔐 Ajout de la machine distante à known_hosts"
+                                mkdir -p ~/.ssh
+                                chmod 700 ~/.ssh
+                                ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_PROD} >> ~/.ssh/known_hosts
+                            '''
+
+                            echo "📦 Copie du fichier docker-compose.yaml vers le serveur"
+                            sh "scp docker-compose.yaml ubuntu@${HOSTNAME_DEPLOY_PROD}:/home/ubuntu/docker-compose.yaml"
+
+                            echo "📝 Création dynamique du fichier .env sur le serveur"
+                            sh """
+                                ssh ubuntu@${HOSTNAME_DEPLOY_PROD} bash -c "'
+                                    cat > /home/ubuntu/.env <<EOF
+MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+MYSQL_USER=${MYSQL_USER}
+MYSQL_PASSWORD=${MYSQL_PASSWORD}
+DOCKER_IMAGE=${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
+EOF
+                                '"
+                            """
+
+                            echo "📤 Copie du fichier create.sql vers le serveur"
+                            sh "scp src/main/resources/database/create.sql ubuntu@${HOSTNAME_DEPLOY_PROD}:/home/ubuntu/create.sql"
+
+                            echo "🚀 Lancement du déploiement Docker Compose et initialisation MySQL"
+                            sh """
+                                ssh ubuntu@${HOSTNAME_DEPLOY_PROD} bash -c "'
+                                    cd /home/ubuntu
+
+                                    echo '${DOCKERHUB_AUTH_PSW}' | docker login -u '${DOCKERHUB_AUTH}' --password-stdin
+
+                                    if ! command -v docker &> /dev/null; then
+                                        curl -fsSL https://get.docker.com | sh
+                                    fi
+
+                                    if ! command -v docker-compose &> /dev/null; then
+                                        sudo curl -L \\"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)\\" -o /usr/local/bin/docker-compose
+                                        sudo chmod +x /usr/local/bin/docker-compose
+                                    fi
+
+                                    sudo docker-compose --env-file .env pull
+                                    sudo docker-compose --env-file .env down
+                                    sudo docker-compose --env-file .env up -d
+
+                                    # Attendre que MySQL soit prêt
+                                    until sudo docker exec paymybuddy_db mysqladmin ping -h localhost --silent; do
+                                        echo \"⏳ Attente que MySQL soit prêt...\"
+                                        sleep 5
+                                    done
+
+                                    # Exécuter le script SQL sur la base paymybuddy
+                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddy
+                                    cd /home/ubuntu
+                                    sudo docker-compose restart app
+                                '"
+                            """
+                        }
+                    }
+                }
+            }
+        }
     }
 
     post {
