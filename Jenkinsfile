@@ -380,6 +380,19 @@ EOF
             }
         }
 
+        stage('Test Staging') {
+            environment {
+                HOSTNAME_DEPLOY_STAGING = "54.210.123.456"
+            }
+            steps {
+                sh '''
+                    sleep 30
+                    apk add --no-cache curl
+                    curl ${HOSTNAME_DEPLOY_STAGING}:80
+                '''
+            }
+        }
+
         stage('Deploy in Production') {
             environment {
                 HOSTNAME_DEPLOY_PROD = "18.206.212.185" 
@@ -459,6 +472,19 @@ EOF
                         }
                     }
                 }
+            }
+        }
+
+        stage('Test Staging') {
+            environment {
+                HOSTNAME_DEPLOY_PROD = "18.206.212.185"
+            }
+            steps {
+                sh '''
+                    sleep 30
+                    apk add --no-cache curl
+                    curl ${HOSTNAME_DEPLOY_STAGING}:80
+                '''
             }
         }
     }
