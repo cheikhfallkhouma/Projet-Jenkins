@@ -483,7 +483,7 @@ EOF
                 sh '''
                     sleep 30
                     apk add --no-cache curl
-                    curl ${HOSTNAME_DEPLOY_STAGING}:80
+                    curl ${HOSTNAME_DEPLOY_PROD}:80
                 '''
             }
         }
