@@ -382,7 +382,7 @@ EOF
 
         stage('Test Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "54.210.123.456"
+                HOSTNAME_DEPLOY_STAGING = "54.175.130.125"
             }
             steps {
                 sh '''
