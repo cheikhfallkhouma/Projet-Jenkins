@@ -388,7 +388,7 @@ EOF
                 sh '''
                     sleep 30
                     apt-get update && apt-get install -y curl
-                    curl http://${HOSTNAME_DEPLOY_STAGING}:80
+                    curl http://$HOSTNAME_DEPLOY_STAGING:80
                 '''
             }
         }
@@ -483,7 +483,7 @@ EOF
                 sh '''
                     sleep 30
                     apt-get update && apt-get install -y curl
-                    curl http://${HOSTNAME_DEPLOY_PROD}:80
+                    curl http://$HOSTNAME_DEPLOY_PROD:80
                 '''
             }
         }
