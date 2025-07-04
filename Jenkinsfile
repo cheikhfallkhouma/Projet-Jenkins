@@ -475,7 +475,7 @@ EOF
             }
         }
 
-        stage('Test Staging') {
+        stage('Test Production') {
             environment {
                 HOSTNAME_DEPLOY_PROD = "18.206.212.185"
             }
