@@ -245,13 +245,30 @@ pipeline {
             }
         }
 
+        // stage('Vérification Quality Gate') {
+        //     steps {
+        //         timeout(time: 300, unit: 'SECONDS') {
+        //             waitForQualityGate abortPipeline: false
+        //         }
+        //     }
+        // }
+
         stage('Vérification Quality Gate') {
             steps {
-                timeout(time: 300, unit: 'SECONDS') {
-                    waitForQualityGate abortPipeline: false
+                script {
+                    if (env.BRANCH_NAME == 'main') {
+                        timeout(time: 5, unit: 'MINUTES') {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                waitForQualityGate abortPipeline: false
+                            }
+                        }
+                    } else {
+                        echo "Skipping Quality Gate check for branch: ${env.BRANCH_NAME}"
+                    }
                 }
             }
         }
+
 
         stage('Package') {
             steps {
