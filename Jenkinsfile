@@ -331,9 +331,16 @@ pipeline {
                             sh """
                                 ssh ubuntu@${HOSTNAME_DEPLOY_STAGING} bash -c "'
                                     cat > /home/ubuntu/.env <<EOF
+// MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+// MYSQL_USER=${MYSQL_USER}
+// MYSQL_PASSWORD=${MYSQL_PASSWORD}
+// DOCKER_IMAGE=${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
 MYSQL_USER=${MYSQL_USER}
 MYSQL_PASSWORD=${MYSQL_PASSWORD}
+SPRING_DATASOURCE_USERNAME=${MYSQL_USER}
+SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD}
+SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/paymybuddy
 DOCKER_IMAGE=${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
 EOF
                                 '"
@@ -426,9 +433,16 @@ EOF
                             sh """
                                 ssh ubuntu@${HOSTNAME_DEPLOY_PROD} bash -c "'
                                     cat > /home/ubuntu/.env <<EOF
+// MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+// MYSQL_USER=${MYSQL_USER}
+// MYSQL_PASSWORD=${MYSQL_PASSWORD}
+// DOCKER_IMAGE=${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
 MYSQL_USER=${MYSQL_USER}
 MYSQL_PASSWORD=${MYSQL_PASSWORD}
+SPRING_DATASOURCE_USERNAME=${MYSQL_USER}
+SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD}
+SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/paymybuddy
 DOCKER_IMAGE=${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
 EOF
                                 '"
