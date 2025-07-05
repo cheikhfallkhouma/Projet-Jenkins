@@ -27,26 +27,25 @@
 version: '3.8'
 
 services:
-  app:
-    image: ${DOCKER_IMAGE}
-    ports:
-      - "80:8080"
-    environment:
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/paymybuddydb
-    depends_on:
-      - db
-
   db:
     image: mysql:8
+    env_file: .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: paymybuddydb
+      MYSQL_DATABASE: paymybuddy
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - db-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
 
-volumes:
-  db-data:
+  app:
+    image: ${DOCKER_IMAGE}
+    env_file: .env
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/paymybuddy
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "80:8080"
