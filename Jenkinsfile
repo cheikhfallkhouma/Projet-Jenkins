@@ -300,7 +300,7 @@ pipeline {
 
         stage('Deploy in Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "54.91.87.63"
+                HOSTNAME_DEPLOY_STAGING = "52.200.20.25"
             }
             
             steps {
@@ -382,7 +382,7 @@ EOF
 
         stage('Test Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "54.91.87.63"
+                HOSTNAME_DEPLOY_STAGING = "52.200.20.25" 
             }
             steps {
                 sh '''
@@ -395,7 +395,7 @@ EOF
 
         stage('Deploy in Production') {
             environment {
-                HOSTNAME_DEPLOY_PROD = "98.81.239.64" 
+                HOSTNAME_DEPLOY_PROD = "3.88.100.217" 
             }
             
             steps {
@@ -477,7 +477,7 @@ EOF
 
         stage('Test Production') {
             environment {
-                HOSTNAME_DEPLOY_PROD = "98.81.239.64"
+                HOSTNAME_DEPLOY_PROD = "3.88.100.217"
             }
             steps {
                 sh '''
