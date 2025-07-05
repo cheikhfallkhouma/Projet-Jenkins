@@ -1,7 +1,10 @@
-DROP DATABASE IF EXISTS db_paymybuddy ;
+CREATE USER IF NOT EXISTS 'appuser'@'%' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON paymybuddy_db.* TO 'appuser'@'%';
+FLUSH PRIVILEGES;
 
-CREATE DATABASE db_paymybuddy;
-USE db_paymybuddy;
+DROP DATABASE IF EXISTS paymybuddy_db;
+CREATE DATABASE paymybuddy_db;
+USE paymybuddy_db;
 
 CREATE TABLE user (
     user_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
