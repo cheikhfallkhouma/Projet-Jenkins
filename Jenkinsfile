@@ -193,6 +193,7 @@
 //     }
 // }
 
+
 pipeline {
     agent {
         docker {
@@ -300,7 +301,7 @@ pipeline {
 
         stage('Deploy in Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "52.200.20.25"
+                HOSTNAME_DEPLOY_STAGING = "54.175.130.125"
             }
             
             steps {
@@ -382,20 +383,20 @@ EOF
 
         stage('Test Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "52.200.20.25"
+                HOSTNAME_DEPLOY_STAGING = "54.210.123.456"
             }
             steps {
                 sh '''
                     sleep 30
-                    apt-get update && apt-get install -y curl
-                    curl http://$HOSTNAME_DEPLOY_STAGING:80
+                    apk add --no-cache curl
+                    curl ${HOSTNAME_DEPLOY_STAGING}:80
                 '''
             }
         }
 
         stage('Deploy in Production') {
             environment {
-                HOSTNAME_DEPLOY_PROD = "3.88.100.217" 
+                HOSTNAME_DEPLOY_PROD = "18.206.212.185" 
             }
             
             steps {
@@ -475,15 +476,15 @@ EOF
             }
         }
 
-        stage('Test Production') {
+        stage('Test Staging') {
             environment {
-                HOSTNAME_DEPLOY_PROD = "3.88.100.217"
+                HOSTNAME_DEPLOY_PROD = "18.206.212.185"
             }
             steps {
                 sh '''
                     sleep 30
-                    apt-get update && apt-get install -y curl
-                    curl http://$HOSTNAME_DEPLOY_PROD:80
+                    apk add --no-cache curl
+                    curl ${HOSTNAME_DEPLOY_PROD}:80
                 '''
             }
         }
