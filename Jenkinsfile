@@ -675,7 +675,7 @@ EOF
                                     sudo docker-compose --env-file .env down
                                     sudo docker-compose --env-file .env up -d
 
-                                    until sudo docker-compose exec db mysqladmin ping -h 127.0.0.1 --silent; do
+                                    until sudo docker-compose exec -T db mysqladmin ping -h 127.0.0.1 --silent; do
                                         echo "⏳ Attente que MySQL soit prêt..."
                                         sleep 5
                                     done
@@ -765,7 +765,7 @@ EOF
                                     sudo docker-compose --env-file .env down
                                     sudo docker-compose --env-file .env up -d
 
-                                    until sudo docker-compose exec db mysqladmin ping -h 127.0.0.1 --silent; do
+                                    until sudo docker-compose exec -T db mysqladmin ping -h 127.0.0.1 --silent; do
                                         echo "⏳ Attente que MySQL soit prêt..."
                                         sleep 5
                                     done
