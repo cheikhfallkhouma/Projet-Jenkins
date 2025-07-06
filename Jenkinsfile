@@ -193,7 +193,6 @@
 //     }
 // }
 
-
 pipeline {
     agent {
         docker {
@@ -383,7 +382,7 @@ EOF
 
         stage('Test Staging') {
             environment {
-                HOSTNAME_DEPLOY_STAGING = "52.200.20.25" 
+                HOSTNAME_DEPLOY_STAGING = "52.200.20.25"
             }
             steps {
                 sh '''
