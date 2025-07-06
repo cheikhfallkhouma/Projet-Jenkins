@@ -1,6 +1,6 @@
-DROP DATABASE IF EXISTS db_paymybuddy; 
-CREATE DATABASE db_paymybuddy;
-USE db_paymybuddy;
+DROP DATABASE IF EXISTS paymybuddy; 
+CREATE DATABASE paymybuddy;
+USE paymybuddy;
 
 
 CREATE TABLE user (
