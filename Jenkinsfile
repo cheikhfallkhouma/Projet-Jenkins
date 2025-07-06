@@ -523,8 +523,9 @@
 //     }
 // }
 
+ 
 
-pipeline {
+ pipeline {
     agent {
         docker {
             image 'maven:3.9.3-eclipse-temurin-17'
@@ -543,9 +544,7 @@ pipeline {
         stage('Tests Unitaires') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
-                    echo "🕐 Début des tests unitaires : ${new Date()}"
                     sh 'mvn clean test -B -V'
-                    echo "✅ Fin des tests unitaires : ${new Date()}"
                 }
             }
         }
@@ -553,9 +552,7 @@ pipeline {
         stage('Tests d’Intégration') {
             steps {
                 timeout(time: 15, unit: 'MINUTES') {
-                    echo "🧪 Début des tests d'intégration : ${new Date()}"
                     sh 'mvn verify -Pintegration-tests'
-                    echo "✅ Fin des tests d'intégration : ${new Date()}"
                 }
             }
         }
@@ -563,7 +560,6 @@ pipeline {
         stage('Analyse SonarCloud') {
             steps {
                 withSonarQubeEnv('SonarCloud') {
-                    echo '📊 Analyse SonarCloud...'
                     sh """
                         mvn verify sonar:sonar \
                             -Dsonar.login=${SONAR_TOKEN} \
@@ -608,7 +604,6 @@ pipeline {
                 ]) {
                     script {
                         def dockerImage = "${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}"
-                        echo "Build et push de l'image Docker : ${dockerImage}"
                         sh """
                             echo "${DOCKERHUB_AUTH_PSW}" | docker login -u "${DOCKERHUB_AUTH}" --password-stdin
                             docker build -t ${dockerImage} .
@@ -637,11 +632,11 @@ pipeline {
                         string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD')
                     ]) {
                         script {
-                            sh '''
+                            sh """
                                 mkdir -p ~/.ssh
                                 chmod 700 ~/.ssh
                                 ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_STAGING} >> ~/.ssh/known_hosts
-                            '''
+                            """
 
                             sh "scp docker-compose.yaml ubuntu@${HOSTNAME_DEPLOY_STAGING}:/home/ubuntu/docker-compose.yaml"
 
@@ -653,7 +648,7 @@ MYSQL_USER=${MYSQL_USER}
 MYSQL_PASSWORD=${MYSQL_PASSWORD}
 SPRING_DATASOURCE_USERNAME=${MYSQL_USER}
 SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD}
-SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/paymybuddydb
+SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/paymybuddy
 DOCKER_IMAGE=${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
 EOF
                                 '"
@@ -680,12 +675,12 @@ EOF
                                     sudo docker-compose --env-file .env down
                                     sudo docker-compose --env-file .env up -d
 
-                                    until sudo docker exec paymybuddy_db mysqladmin ping -h localhost --silent; do
-                                        echo \"⏳ Attente que MySQL soit prêt...\"
+                                    until sudo docker-compose exec db mysqladmin ping -h 127.0.0.1 --silent; do
+                                        echo "⏳ Attente que MySQL soit prêt..."
                                         sleep 5
                                     done
 
-                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddydb
+                                    cat /home/ubuntu/create.sql | sudo docker-compose exec -T db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddy
 
                                     sudo docker-compose restart app
                                 '"
@@ -727,11 +722,11 @@ EOF
                         string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD')
                     ]) {
                         script {
-                            sh '''
+                            sh """
                                 mkdir -p ~/.ssh
                                 chmod 700 ~/.ssh
                                 ssh-keyscan -t rsa ${HOSTNAME_DEPLOY_PROD} >> ~/.ssh/known_hosts
-                            '''
+                            """
 
                             sh "scp docker-compose.yaml ubuntu@${HOSTNAME_DEPLOY_PROD}:/home/ubuntu/docker-compose.yaml"
 
@@ -743,7 +738,7 @@ MYSQL_USER=${MYSQL_USER}
 MYSQL_PASSWORD=${MYSQL_PASSWORD}
 SPRING_DATASOURCE_USERNAME=${MYSQL_USER}
 SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD}
-SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/paymybuddydb
+SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/paymybuddy
 DOCKER_IMAGE=${DOCKERHUB_AUTH}/${IMAGE_NAME}:${IMAGE_TAG}
 EOF
                                 '"
@@ -770,12 +765,12 @@ EOF
                                     sudo docker-compose --env-file .env down
                                     sudo docker-compose --env-file .env up -d
 
-                                    until sudo docker exec paymybuddy_db mysqladmin ping -h localhost --silent; do
-                                        echo \"⏳ Attente que MySQL soit prêt...\"
+                                    until sudo docker-compose exec db mysqladmin ping -h 127.0.0.1 --silent; do
+                                        echo "⏳ Attente que MySQL soit prêt..."
                                         sleep 5
                                     done
 
-                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddydb
+                                    cat /home/ubuntu/create.sql | sudo docker-compose exec -T db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddy
 
                                     sudo docker-compose restart app
                                 '"
