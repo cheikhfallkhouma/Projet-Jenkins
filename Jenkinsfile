@@ -680,12 +680,12 @@ EOF
                                     sudo docker-compose --env-file .env down
                                     sudo docker-compose --env-file .env up -d
 
-                                    until sudo docker exec db mysqladmin ping -h localhost --silent; do
+                                    until sudo docker exec paymybuddy_db mysqladmin ping -h localhost --silent; do
                                         echo \"⏳ Attente que MySQL soit prêt...\"
                                         sleep 5
                                     done
 
-                                    cat /home/ubuntu/create.sql | sudo docker exec -i db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddydb
+                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddydb
 
                                     sudo docker-compose restart app
                                 '"
@@ -770,12 +770,12 @@ EOF
                                     sudo docker-compose --env-file .env down
                                     sudo docker-compose --env-file .env up -d
 
-                                    until sudo docker exec db mysqladmin ping -h localhost --silent; do
+                                    until sudo docker exec paymybuddy_db mysqladmin ping -h localhost --silent; do
                                         echo \"⏳ Attente que MySQL soit prêt...\"
                                         sleep 5
                                     done
 
-                                    cat /home/ubuntu/create.sql | sudo docker exec -i db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddydb
+                                    cat /home/ubuntu/create.sql | sudo docker exec -i paymybuddy_db mysql -u root -p${MYSQL_ROOT_PASSWORD} paymybuddydb
 
                                     sudo docker-compose restart app
                                 '"
