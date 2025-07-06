@@ -1,6 +1,9 @@
+version: '3.8'
+
 services:
   db:
     image: mysql:8
+    container_name: paymybuddy_db
     env_file: .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -10,6 +13,7 @@ services:
 
   app:
     image: ${DOCKER_IMAGE}
+    container_name: paymybuddy_app
     env_file: .env
     depends_on:
       - db
