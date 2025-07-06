@@ -387,7 +387,9 @@ EOF
             steps {
                 sh '''
                     sleep 30
-                    apk add --no-cache curl
+                    if ! command -v curl >/dev/null; then
+                        apt-get update && apt-get install -y curl
+                    fi
                     curl ${HOSTNAME_DEPLOY_STAGING}:80
                 '''
             }
@@ -482,7 +484,9 @@ EOF
             steps {
                 sh '''
                     sleep 30
-                    apk add --no-cache curl
+                    if ! command -v curl >/dev/null; then
+                        apt-get update && apt-get install -y curl
+                    fi
                     curl ${HOSTNAME_DEPLOY_PROD}:80
                 '''
             }
